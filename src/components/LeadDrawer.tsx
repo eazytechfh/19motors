@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { BaseDeLeads, Etiqueta, LeadHistoricoEstagio, Vendedor } from '@/types/database';
 import { Avatar } from '@/components/Avatar';
 import { isDentroExpediente } from '@/lib/expediente';
+import { estaComBotAtivo } from '@/lib/lead-bot';
 
 function calcularIdade(dataNascimento: string | null): number | null {
   if (!dataNascimento) return null;
@@ -57,6 +58,7 @@ export function LeadDrawer({
   const [salvandoObservacao, setSalvandoObservacao] = useState(false);
 
   const [campos, setCampos] = useState({
+    nome_lead: lead.nome_lead,
     cpf: lead.cpf ?? '',
     data_nascimento: lead.data_nascimento ?? '',
     veiculo_interesse: lead.veiculo_interesse ?? '',
@@ -65,17 +67,20 @@ export function LeadDrawer({
   });
   const [salvandoCampos, setSalvandoCampos] = useState(false);
   const [mensagemCampos, setMensagemCampos] = useState<string | null>(null);
+  const [alterandoBot, setAlterandoBot] = useState(false);
+  const [mensagemBot, setMensagemBot] = useState<string | null>(null);
 
   useEffect(() => {
     setObservacao(lead.observacao_vendedor ?? '');
     setCampos({
+      nome_lead: lead.nome_lead,
       cpf: lead.cpf ?? '',
       data_nascimento: lead.data_nascimento ?? '',
       veiculo_interesse: lead.veiculo_interesse ?? '',
       valor: lead.valor !== null ? String(lead.valor) : '',
       vendedor: lead.vendedor ?? '',
     });
-  }, [lead.id, lead.observacao_vendedor, lead.cpf, lead.data_nascimento, lead.veiculo_interesse, lead.valor, lead.vendedor]);
+  }, [lead.id, lead.nome_lead, lead.observacao_vendedor, lead.cpf, lead.data_nascimento, lead.veiculo_interesse, lead.valor, lead.vendedor]);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,6 +154,7 @@ export function LeadDrawer({
     const { error } = await supabase
       .from('BASE_DE_LEADS')
       .update({
+        nome_lead: campos.nome_lead.trim(),
         cpf: campos.cpf || null,
         data_nascimento: campos.data_nascimento || null,
         veiculo_interesse: campos.veiculo_interesse || null,
@@ -167,6 +173,7 @@ export function LeadDrawer({
     setMensagemCampos('Alterações salvas.');
     onUpdated({
       ...lead,
+      nome_lead: campos.nome_lead.trim(),
       cpf: campos.cpf || null,
       data_nascimento: campos.data_nascimento || null,
       veiculo_interesse: campos.veiculo_interesse || null,
@@ -176,10 +183,38 @@ export function LeadDrawer({
     setTimeout(() => setMensagemCampos(null), 3000);
   }
 
+  async function alternarBot() {
+    const novoEstado = !estaComBotAtivo(lead.bot_ativo);
+    setAlterandoBot(true);
+    setMensagemBot(null);
+
+    try {
+      const response = await fetch('/api/leads/bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: lead.id, ativo: novoEstado }),
+      });
+      const resultado = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        setMensagemBot(resultado?.error ?? 'Erro ao alterar a IA.');
+        return;
+      }
+
+      onUpdated({ ...lead, bot_ativo: novoEstado });
+      setMensagemBot(novoEstado ? 'IA ativada.' : 'IA desativada.');
+    } catch {
+      setMensagemBot('Erro ao alterar a IA.');
+    } finally {
+      setAlterandoBot(false);
+    }
+  }
+
   const idade = calcularIdade(campos.data_nascimento || null);
   const serasa = classificacaoSerasa(lead.score_serasa);
   const dentroExpediente = isDentroExpediente(new Date(lead.created_at));
   const whatsappUrl = telefoneParaWhatsapp(lead.telefone);
+  const botAtivo = estaComBotAtivo(lead.bot_ativo);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -220,6 +255,18 @@ export function LeadDrawer({
                   {dentroExpediente ? 'Dentro do expediente' : 'Fora do expediente'}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={alternarBot}
+                disabled={alterandoBot}
+                aria-pressed={botAtivo}
+                className={`mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60 ${
+                  botAtivo ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:opacity-90'
+                }`}
+              >
+                {alterandoBot ? 'Alterando IA...' : botAtivo ? 'Desativar IA' : 'Ativar IA'}
+              </button>
+              {mensagemBot && <p className="mt-1 text-xs text-gray-500">{mensagemBot}</p>}
             </div>
           </div>
           <button
@@ -238,6 +285,14 @@ export function LeadDrawer({
               Dados Pessoais
             </h3>
             <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <label className="mb-1 block text-xs text-gray-500">Nome</label>
+                <input
+                  value={campos.nome_lead}
+                  onChange={(e) => setCampos((c) => ({ ...c, nome_lead: e.target.value }))}
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                />
+              </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">CPF</label>
                 <input
