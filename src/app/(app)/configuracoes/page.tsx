@@ -384,6 +384,8 @@ function EtiquetasTab() {
   const [loading, setLoading] = useState(true);
   const [nome, setNome] = useState('');
   const [cor, setCor] = useState('#3b82f6');
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<{ tipo: 'erro' | 'sucesso'; texto: string } | null>(null);
 
   useEffect(() => {
     async function fetchEtiquetas() {
@@ -399,16 +401,23 @@ function EtiquetasTab() {
   async function adicionar(e: React.FormEvent) {
     e.preventDefault();
     if (!nome.trim()) return;
+    setSalvando(true);
+    setMensagem(null);
     const supabase = createClient();
     const { data, error } = await supabase
       .from('etiquetas')
-      .insert({ nome, cor })
+      .insert({ nome: nome.trim(), cor })
       .select('id, nome, cor, created_at')
       .single();
-    if (!error && data) {
-      setEtiquetas((prev) => [...prev, data as Etiqueta]);
-      setNome('');
+    setSalvando(false);
+    if (error || !data) {
+      setMensagem({ tipo: 'erro', texto: `Erro ao salvar etiqueta${error?.message ? `: ${error.message}` : '.'}` });
+      return;
     }
+
+    setEtiquetas((prev) => [...prev, data as Etiqueta]);
+    setNome('');
+    setMensagem({ tipo: 'sucesso', texto: 'Etiqueta salva com sucesso.' });
   }
 
   async function remover(id: number) {
@@ -439,10 +448,20 @@ function EtiquetasTab() {
             className="h-10 w-14 rounded-lg border border-gray-300"
           />
         </div>
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white">
-          Adicionar
+        <button
+          type="submit"
+          disabled={salvando}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+        >
+          {salvando ? 'Salvando...' : 'Adicionar'}
         </button>
       </form>
+
+      {mensagem && (
+        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600' : 'text-green-600'}`} role="status">
+          {mensagem.texto}
+        </p>
+      )}
 
       {loading ? (
         <p className="text-sm text-gray-500">Carregando...</p>

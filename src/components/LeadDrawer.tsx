@@ -6,6 +6,7 @@ import type { BaseDeLeads, Etiqueta, LeadHistoricoEstagio, Vendedor } from '@/ty
 import { Avatar } from '@/components/Avatar';
 import { isDentroExpediente } from '@/lib/expediente';
 import { estaComBotAtivo } from '@/lib/lead-bot';
+import { criarAtualizacaoObservacao, MENSAGEM_OBSERVACAO_SALVA } from '@/lib/negociacao/observacao';
 
 function calcularIdade(dataNascimento: string | null): number | null {
   if (!dataNascimento) return null;
@@ -56,6 +57,10 @@ export function LeadDrawer({
 
   const [observacao, setObservacao] = useState(lead.observacao_vendedor ?? '');
   const [salvandoObservacao, setSalvandoObservacao] = useState(false);
+  const [mensagemObservacao, setMensagemObservacao] = useState<{
+    tipo: 'erro' | 'sucesso';
+    texto: string;
+  } | null>(null);
 
   const [campos, setCampos] = useState({
     nome_lead: lead.nome_lead,
@@ -135,13 +140,24 @@ export function LeadDrawer({
 
   async function salvarObservacao() {
     setSalvandoObservacao(true);
+    setMensagemObservacao(null);
     const supabase = createClient();
+    const emNegociacao = lead.estagio_lead.toLowerCase().trim() === 'em_negociacao';
+    const atualizacao = emNegociacao
+      ? criarAtualizacaoObservacao(observacao)
+      : { observacao_vendedor: observacao };
     const { error } = await supabase
       .from('BASE_DE_LEADS')
-      .update({ observacao_vendedor: observacao })
+      .update(atualizacao)
       .eq('id', lead.id);
     setSalvandoObservacao(false);
-    if (!error) onUpdated({ ...lead, observacao_vendedor: observacao });
+    if (error) {
+      setMensagemObservacao({ tipo: 'erro', texto: 'Erro ao salvar observação.' });
+      return;
+    }
+
+    setMensagemObservacao({ tipo: 'sucesso', texto: MENSAGEM_OBSERVACAO_SALVA });
+    onUpdated({ ...lead, ...atualizacao });
   }
 
   async function salvarCampos() {
@@ -452,14 +468,26 @@ export function LeadDrawer({
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="Anote observações sobre este lead..."
             />
-            <button
-              type="button"
-              onClick={salvarObservacao}
-              disabled={salvandoObservacao}
-              className="mt-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
-            >
-              {salvandoObservacao ? 'Salvando...' : 'Salvar observação'}
-            </button>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={salvarObservacao}
+                disabled={salvandoObservacao}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-60"
+              >
+                {salvandoObservacao ? 'Salvando...' : 'Salvar observação'}
+              </button>
+              {mensagemObservacao && (
+                <p
+                  role="status"
+                  className={`text-right text-xs ${
+                    mensagemObservacao.tipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                  }`}
+                >
+                  {mensagemObservacao.texto}
+                </p>
+              )}
+            </div>
           </section>
 
           <section>
