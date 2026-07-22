@@ -33,6 +33,13 @@ function telefoneParaWhatsapp(telefone: string | null | undefined): string | nul
   return numero ? `https://wa.me/${numero}` : null;
 }
 
+function formatarUltimaAlteracaoBot(valor: string | null | undefined): string {
+  if (!valor) return 'não registrada';
+  const data = new Date(valor);
+  if (Number.isNaN(data.getTime())) return 'não registrada';
+  return data.toLocaleString('pt-BR');
+}
+
 interface LeadDrawerProps {
   lead: BaseDeLeads;
   estagioLabel: string;
@@ -40,6 +47,7 @@ interface LeadDrawerProps {
   estagioLabelOf: (estagio: string) => string;
   onClose: () => void;
   onUpdated: (lead: BaseDeLeads) => void;
+  onDeleted: (leadId: number) => void;
 }
 
 export function LeadDrawer({
@@ -49,6 +57,7 @@ export function LeadDrawer({
   estagioLabelOf,
   onClose,
   onUpdated,
+  onDeleted,
 }: LeadDrawerProps) {
   const [etiquetas, setEtiquetas] = useState<Etiqueta[]>([]);
   const [etiquetasDoLead, setEtiquetasDoLead] = useState<Set<number>>(new Set());
@@ -74,6 +83,9 @@ export function LeadDrawer({
   const [mensagemCampos, setMensagemCampos] = useState<string | null>(null);
   const [alterandoBot, setAlterandoBot] = useState(false);
   const [mensagemBot, setMensagemBot] = useState<string | null>(null);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState<string | null>(null);
 
   useEffect(() => {
     setObservacao(lead.observacao_vendedor ?? '');
@@ -212,17 +224,51 @@ export function LeadDrawer({
       });
       const resultado = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        setMensagemBot(resultado?.error ?? 'Erro ao alterar a IA.');
+      if (
+        !response.ok ||
+        resultado?.id !== lead.id ||
+        estaComBotAtivo(resultado?.bot_ativo) !== novoEstado ||
+        !resultado?.bot_ativo_alterado_em
+      ) {
+        setMensagemBot('Não foi possível alterar o status da IA. Tente novamente.');
         return;
       }
 
-      onUpdated({ ...lead, bot_ativo: novoEstado });
+      onUpdated({
+        ...lead,
+        bot_ativo: resultado.bot_ativo,
+        bot_ativo_alterado_em: resultado.bot_ativo_alterado_em,
+      });
       setMensagemBot(novoEstado ? 'IA ativada.' : 'IA desativada.');
     } catch {
-      setMensagemBot('Erro ao alterar a IA.');
+      setMensagemBot('Não foi possível alterar o status da IA. Tente novamente.');
     } finally {
       setAlterandoBot(false);
+    }
+  }
+
+  async function excluirLead() {
+    setExcluindo(true);
+    setErroExclusao(null);
+
+    try {
+      const response = await fetch(`/api/leads/${lead.id}`, { method: 'DELETE' });
+      const resultado = await response.json().catch(() => null);
+
+      if (!response.ok || resultado?.id !== lead.id) {
+        setErroExclusao(
+          'Não foi possível excluir o lead. Verifique se você tem permissão para esta ação.'
+        );
+        return;
+      }
+
+      onDeleted(lead.id);
+    } catch {
+      setErroExclusao(
+        'Não foi possível excluir o lead. Verifique se você tem permissão para esta ação.'
+      );
+    } finally {
+      setExcluindo(false);
     }
   }
 
@@ -231,6 +277,7 @@ export function LeadDrawer({
   const dentroExpediente = isDentroExpediente(new Date(lead.created_at));
   const whatsappUrl = telefoneParaWhatsapp(lead.telefone);
   const botAtivo = estaComBotAtivo(lead.bot_ativo);
+  const ultimaAlteracaoBot = formatarUltimaAlteracaoBot(lead.bot_ativo_alterado_em);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -271,18 +318,30 @@ export function LeadDrawer({
                   {dentroExpediente ? 'Dentro do expediente' : 'Fora do expediente'}
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={alternarBot}
-                disabled={alterandoBot}
-                aria-pressed={botAtivo}
-                className={`mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-60 ${
-                  botAtivo ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:opacity-90'
-                }`}
-              >
-                {alterandoBot ? 'Alterando IA...' : botAtivo ? 'Desativar IA' : 'Ativar IA'}
-              </button>
-              {mensagemBot && <p className="mt-1 text-xs text-gray-500">{mensagemBot}</p>}
+              <div className="mt-2" aria-live="polite">
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
+                    botAtivo ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
+                  }`}
+                >
+                  {botAtivo ? 'IA ativa' : 'IA inativa'}
+                </span>
+                <p className="mt-1 text-xs text-gray-500">
+                  Última alteração: {ultimaAlteracaoBot}
+                </p>
+                <button
+                  type="button"
+                  onClick={alternarBot}
+                  disabled={alterandoBot}
+                  aria-pressed={botAtivo}
+                  className={`mt-2 rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 ${
+                    botAtivo ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:opacity-90'
+                  }`}
+                >
+                  {alterandoBot ? 'Alterando IA...' : botAtivo ? 'Desativar IA' : 'Ativar IA'}
+                </button>
+                {mensagemBot && <p className="mt-1 text-xs text-gray-500">{mensagemBot}</p>}
+              </div>
             </div>
           </div>
           <button
@@ -515,8 +574,67 @@ export function LeadDrawer({
               </ul>
             )}
           </section>
+
+          <section className="border-t border-gray-200 pt-5">
+            <h3 className="text-sm font-semibold text-red-700">Excluir lead</h3>
+            <p className="mt-1 text-xs text-gray-500">
+              Esta ação é permanente e não poderá ser desfeita.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                setErroExclusao(null);
+                setConfirmandoExclusao(true);
+              }}
+              className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+            >
+              Excluir lead
+            </button>
+          </section>
         </div>
       </div>
+
+      {confirmandoExclusao && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirmar-exclusao-titulo"
+            className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl"
+          >
+            <h2 id="confirmar-exclusao-titulo" className="text-base font-semibold text-gray-900">
+              Confirmar exclusão
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Tem certeza de que deseja excluir o lead {lead.nome_lead}? Esta ação não poderá ser
+              desfeita.
+            </p>
+            {erroExclusao && (
+              <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+                {erroExclusao}
+              </p>
+            )}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmandoExclusao(false)}
+                disabled={excluindo}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Não
+              </button>
+              <button
+                type="button"
+                onClick={excluirLead}
+                disabled={excluindo}
+                className="rounded-lg bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {excluindo ? 'Excluindo...' : 'Sim'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

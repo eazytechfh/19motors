@@ -96,6 +96,7 @@ export function Sidebar({ userName, userCargo, logoUrl }: SidebarProps) {
   const router = useRouter();
   const [menuAberto, setMenuAberto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const logoSrc = logoUrl || '/19motors.png';
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.hideFor?.includes(userCargo));
 
@@ -119,12 +120,10 @@ export function Sidebar({ userName, userCargo, logoUrl }: SidebarProps) {
   return (
     <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-gray-200 bg-card">
       <div className="px-5 py-6">
-        {logoUrl && (
-          <div className="mb-3 inline-flex h-16 max-w-[200px] items-center justify-center overflow-hidden rounded-xl">
-            {/* eslint-disable-next-line @next/next/no-img-element -- logo enviada pelo admin_master via upload, URL dinâmica de Storage */}
-            <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
-          </div>
-        )}
+        <div className="mb-3 inline-flex h-16 w-16 items-center justify-center overflow-hidden rounded-xl bg-black">
+          {/* eslint-disable-next-line @next/next/no-img-element -- aceita logo dinâmica do Storage e fallback local */}
+          <img src={logoSrc} alt="19 Motors" className="h-full w-full object-contain" />
+        </div>
         <h1 className="text-lg font-bold text-foreground">EazyClick</h1>
         <p className="text-xs text-gray-500">CRM</p>
       </div>
