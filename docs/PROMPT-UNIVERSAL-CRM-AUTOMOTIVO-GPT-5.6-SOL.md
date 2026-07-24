@@ -17,6 +17,7 @@ Assets de referência que o usuário deve anexar à sessão:
 - imagem lateral do carro de referência: `[CAMINHO/ANEXO DA IMAGEM]`;
 - áudio de carro acelerando: `[CAMINHO/ANEXO DO MP3 DO MOTOR]`;
 - áudio de dinheiro/caixa registradora: `[CAMINHO/ANEXO DO MP3 DE DINHEIRO]`.
+- áudio de notificação ping/ding para lead atribuído: `[CAMINHO/ANEXO DO MP3 DE NOTIFICAÇÃO]`.
 
 Nunca baixe áudio de YouTube ou de outra fonte de terceiros. Use somente arquivos anexados/fornecidos pelo usuário ou assets cuja licença tenha sido confirmada.
 
@@ -26,12 +27,22 @@ Nunca baixe áudio de YouTube ou de outra fonte de terceiros. Use somente arquiv
 
 Considere transferência como mudança real do responsável/vendedor do lead.
 
-- Toque uma confirmação sonora curta somente depois de o banco confirmar a mudança.
+- Para quem realiza manualmente a transferência, toque uma confirmação sonora curta somente depois de o banco confirmar a mudança.
 - Não toque se o vendedor anterior e o novo forem equivalentes após trim e normalização de caixa.
 - O som é feedback auxiliar: bloqueio de autoplay, ausência de Web Audio API ou erro de áudio nunca pode desfazer nem quebrar a transferência.
 - Não use arquivo remoto. Prefira Web Audio API ou um asset local pequeno.
 - Evite sons duplicados causados por re-render, optimistic update ou eventos realtime repetidos.
-- Se o produto também recebe transferências externas/realtime, notifique apenas o destinatário apropriado e deduplique pelo ID/timestamp da ação.
+- O vendedor que recebe o lead deve ouvir o MP3 fornecido, salvo como `public/effects/lead-assigned.mp3`, mesmo quando a atribuição vier de outra tela ou automação externa.
+- Monte um watcher global somente no layout autenticado do cargo `vendedor`.
+- Ao abrir a tela, consulte silenciosamente os IDs já atribuídos ao vendedor e use-os como linha de base: não toque para leads antigos.
+- Acompanhe `postgres_changes` de `BASE_DE_LEADS` e, após o evento, confirme no banco os IDs cujo campo `vendedor` corresponde exatamente ao nome do usuário autenticado.
+- Toque `lead-assigned.mp3` uma única vez quando surgir ao menos um ID que não existia no conjunto anterior.
+- Substitua o conjunto anterior pelo conjunto atual em toda verificação, permitindo detectar corretamente uma reatribuição futura.
+- Use polling leve de aproximadamente 15 segundos como fallback para automações ou ambientes onde a tabela não está habilitada na publication do Supabase Realtime.
+- Remova channel e intervalo no cleanup do componente.
+- Não toque em atualizações comuns de um lead que já pertence ao vendedor.
+- O watcher deve retornar `null` e não criar popup visual adicional.
+- Capture falhas de `audio.play()`: uma aba sem interação pode bloquear autoplay e isso nunca deve afetar a atribuição.
 
 ### 2. Autoria e data da observação
 
@@ -183,6 +194,10 @@ Pré-carregue os dois arquivos, espere `loadedmetadata` antes de definir `curren
 - Comparar status sem normalizar acentos/caixa ou persistir label de UI no lugar do valor canônico.
 - Fechar o modal/alterar UI antes de confirmar update do estoque.
 - Tocar som antes da persistência, a cada render ou sem capturar rejeição de autoplay.
+- Tocar a notificação de atribuição para leads que já estavam com o vendedor quando ele abriu a tela.
+- Tocar a notificação a cada update do mesmo lead, em vez de comparar o conjunto de IDs atribuídos.
+- Depender apenas de Realtime e perder atribuições feitas por automações quando a tabela não está na publication.
+- Montar um watcher por página e gerar múltiplos sons; ele deve existir uma vez no layout autenticado.
 - Usar áudio remoto, muito alto, longo ou impossível de desativar pelo navegador.
 - Tocar somente dinheiro ou somente motor quando o requisito exige os dois simultaneamente.
 - Iniciar o motor em `0s` em vez de `11s`, ou o dinheiro em `0s` em vez de `5s`.
@@ -203,6 +218,7 @@ Pré-carregue os dois arquivos, espere `loadedmetadata` antes de definir `curren
 ## Critérios de aceite
 
 - Transferência confirmada toca uma vez; falha ou ausência de mudança não toca.
+- Vendedor destinatário ouve `lead-assigned.mp3` uma vez quando um novo lead é atribuído a ele, sem som no carregamento inicial e sem repetição em updates comuns.
 - Venda confirmada mostra “Parabéns pela venda!” por 5 segundos, com o carro fiel à referência atravessando da direita para a esquerda.
 - Motor começa em 11s e dinheiro começa em 5s; ambos tocam juntos e param após 5 segundos.
 - Observação mostra último autor e data/hora persistidos.

@@ -9,6 +9,18 @@ export function houveTransferencia(
   return normalizarResponsavel(responsavelAnterior) !== normalizarResponsavel(responsavelNovo);
 }
 
+export async function tocarSomLeadAtribuido(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  try {
+    const audio = new Audio('/effects/lead-assigned.mp3');
+    audio.preload = 'auto';
+    audio.volume = 0.86;
+    await audio.play();
+  } catch {
+    // O navegador pode bloquear áudio em abas que ainda não tiveram interação.
+  }
+}
+
 export async function tocarSomTransferencia(): Promise<void> {
   if (typeof window === 'undefined') return;
   try {

@@ -15,9 +15,12 @@ test('separa o toque de popup da transferência e o motor da venda fechada', () 
   const audio = readFileSync('src/lib/feedback/transferencia.ts', 'utf8');
   const pipeline = readFileSync('src/app/(app)/pipeline/page.tsx', 'utf8');
   const celebration = readFileSync('src/components/VendaFechadaCelebration.tsx', 'utf8');
+  const assignmentWatcher = readFileSync('src/components/LeadAssignmentSoundWatcher.tsx', 'utf8');
 
   assert.match(audio, /tocarSomTransferencia/);
   assert.match(audio, /tocarSomVendaFechada/);
+  assert.match(audio, /tocarSomLeadAtribuido/);
+  assert.match(audio, /\/effects\/lead-assigned\.mp3/);
   assert.match(audio, /\/effects\/sale-money\.mp3/);
   assert.match(audio, /\/effects\/sale-engine\.mp3/);
   assert.match(audio, /inicio:\s*5/);
@@ -28,4 +31,8 @@ test('separa o toque de popup da transferência e o motor da venda fechada', () 
   assert.match(celebration, /Parabéns pela venda!/);
   assert.match(celebration, /prefers-reduced-motion|motion-reduce/);
   assert.match(celebration, /5000/);
+  assert.match(assignmentWatcher, /postgres_changes/);
+  assert.match(assignmentWatcher, /BASE_DE_LEADS/);
+  assert.match(assignmentWatcher, /idsAtribuidos/);
+  assert.match(assignmentWatcher, /tocarSomLeadAtribuido/);
 });
