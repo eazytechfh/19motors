@@ -20,3 +20,150 @@ body {
 * {
   box-sizing: border-box;
 }
+
+.car-loading-track {
+  position: relative;
+  width: 9rem;
+  height: 2.5rem;
+  overflow: hidden;
+  border-bottom: 2px dashed #d1d5db;
+}
+
+.car-loading-car {
+  position: absolute;
+  bottom: 0.35rem;
+  left: 0;
+  width: 3.5rem;
+  height: 1.45rem;
+  animation: car-drive 1.5s ease-in-out infinite;
+}
+
+.car-loading-body {
+  position: absolute;
+  inset: 0.35rem 0 0.2rem;
+  border-radius: 0.65rem 0.8rem 0.25rem 0.25rem;
+  background: var(--color-primaria);
+}
+
+.car-loading-body::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: -0.45rem;
+  width: 1.7rem;
+  height: 0.75rem;
+  border-radius: 0.65rem 0.65rem 0 0;
+  background: var(--color-secundaria);
+}
+
+.car-loading-wheel {
+  position: absolute;
+  bottom: 0;
+  width: 0.65rem;
+  height: 0.65rem;
+  border: 2px solid #fff;
+  border-radius: 9999px;
+  background: #1f2937;
+  animation: car-wheel 0.45s linear infinite;
+}
+
+.car-loading-wheel-left { left: 0.55rem; }
+.car-loading-wheel-right { right: 0.45rem; }
+
+@keyframes car-drive {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(5.4rem) translateY(-0.08rem); }
+}
+
+@keyframes car-wheel { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .car-loading-car,
+  .car-loading-wheel { animation: none; }
+  .car-loading-car { left: 2.75rem; }
+}
+
+.sale-celebration {
+  animation: sale-fade-in 240ms ease-out both;
+}
+
+.sale-kicker {
+  border: 1px solid rgb(56 189 248 / 45%);
+  border-radius: 9999px;
+  background: rgb(14 165 233 / 12%);
+  padding: 0.4rem 0.9rem;
+  color: #7dd3fc;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+}
+
+.sale-car-stage {
+  position: relative;
+  width: min(88vw, 35rem);
+  height: 15.5rem;
+}
+
+.sale-car {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 22px rgb(0 0 0 / 55%));
+  animation: sale-car-right-to-left 5s cubic-bezier(.22, .72, .25, 1) both;
+}
+
+.sale-car-glow {
+  position: absolute;
+  inset: 48% 8% 3%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgb(56 189 248 / 55%), rgb(245 158 11 / 45%), transparent);
+  filter: blur(24px);
+  animation: sale-glow 1.4s ease-in-out infinite alternate;
+}
+
+.sale-speed-lines {
+  position: absolute;
+  inset: 0;
+  opacity: 0.32;
+  background:
+    linear-gradient(100deg, transparent 8%, rgb(56 189 248 / 70%) 8.2%, transparent 8.6%),
+    linear-gradient(96deg, transparent 35%, rgb(245 158 11 / 50%) 35.2%, transparent 35.6%),
+    repeating-linear-gradient(0deg, transparent 0 62px, rgb(148 163 184 / 10%) 63px 64px);
+  transform: skewX(-12deg) scale(1.2);
+  animation: sale-lines 900ms linear infinite;
+}
+
+@keyframes sale-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sale-car-right-to-left {
+  0% { opacity: 0; transform: translateX(100vw) scale(.86); }
+  8% { opacity: 1; }
+  24% { opacity: 1; transform: translateX(10vw) scale(1.02); }
+  68% { opacity: 1; transform: translateX(-8vw) scale(1); }
+  86% { opacity: 1; }
+  100% { opacity: 0; transform: translateX(-110vw) scale(.9); }
+}
+
+@keyframes sale-glow {
+  from { opacity: .45; transform: scaleX(.88); }
+  to { opacity: 1; transform: scaleX(1.08); }
+}
+
+@keyframes sale-lines {
+  from { background-position: 0 0, 0 0, 0 0; }
+  to { background-position: -280px 0, -190px 0, 0 64px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sale-celebration,
+  .sale-car,
+  .sale-car-glow,
+  .sale-speed-lines {
+    animation: none;
+  }
+}

@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { BaseDeLeads, Etiqueta, LeadHistoricoEstagio, Vendedor } from '@/types/database';
+import type { BaseDeLeads, Etiqueta, LeadHistoricoEstagio, LeadLog, Vendedor } from '@/types/database';
 import { Avatar } from '@/components/Avatar';
 import { isDentroExpediente } from '@/lib/expediente';
 import { estaComBotAtivo } from '@/lib/lead-bot';
 import { criarAtualizacaoObservacao, MENSAGEM_OBSERVACAO_SALVA } from '@/lib/negociacao/observacao';
+import { houveTransferencia, tocarSomTransferencia } from '@/lib/feedback/transferencia';
 
 function calcularIdade(dataNascimento: string | null): number | null {
   if (!dataNascimento) return null;
@@ -63,6 +64,7 @@ export function LeadDrawer({
   const [etiquetasDoLead, setEtiquetasDoLead] = useState<Set<number>>(new Set());
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
   const [historico, setHistorico] = useState<LeadHistoricoEstagio[]>([]);
+  const [logs, setLogs] = useState<LeadLog[]>([]);
 
   const [observacao, setObservacao] = useState(lead.observacao_vendedor ?? '');
   const [salvandoObservacao, setSalvandoObservacao] = useState(false);
@@ -103,7 +105,7 @@ export function LeadDrawer({
     let isMounted = true;
     async function fetchDados() {
       const supabase = createClient();
-      const [{ data: todasEtiquetas }, { data: doLead }, { data: vendedoresData }, { data: historicoData }] =
+      const [{ data: todasEtiquetas }, { data: doLead }, { data: vendedoresData }, { data: historicoData }, { data: logsData }] =
         await Promise.all([
           supabase.from('etiquetas').select('id, nome, cor, created_at').order('nome'),
           supabase.from('lead_etiquetas').select('id_etiqueta').eq('id_lead', lead.id),
@@ -113,18 +115,35 @@ export function LeadDrawer({
             .select('id, id_lead, estagio_anterior, estagio_novo, usuario, created_at')
             .eq('id_lead', lead.id)
             .order('created_at', { ascending: false }),
+          supabase
+            .from('lead_logs')
+            .select('id, id_lead, acao, responsavel_id, responsavel_nome, detalhes, created_at')
+            .eq('id_lead', lead.id)
+            .order('created_at', { ascending: false })
+            .limit(100),
         ]);
       if (!isMounted) return;
       setEtiquetas((todasEtiquetas as Etiqueta[]) ?? []);
       setEtiquetasDoLead(new Set(((doLead as { id_etiqueta: number }[]) ?? []).map((e) => e.id_etiqueta)));
       setVendedores((vendedoresData as Vendedor[]) ?? []);
       setHistorico((historicoData as LeadHistoricoEstagio[]) ?? []);
+      setLogs((logsData as LeadLog[]) ?? []);
     }
     fetchDados();
     return () => {
       isMounted = false;
     };
   }, [lead.id]);
+
+  async function atualizarLogs() {
+    const { data } = await createClient()
+      .from('lead_logs')
+      .select('id, id_lead, acao, responsavel_id, responsavel_nome, detalhes, created_at')
+      .eq('id_lead', lead.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    setLogs((data as LeadLog[]) ?? []);
+  }
 
   async function toggleEtiqueta(idEtiqueta: number) {
     const supabase = createClient();
@@ -170,6 +189,7 @@ export function LeadDrawer({
 
     setMensagemObservacao({ tipo: 'sucesso', texto: MENSAGEM_OBSERVACAO_SALVA });
     onUpdated({ ...lead, ...atualizacao });
+    await atualizarLogs();
   }
 
   async function salvarCampos() {
@@ -199,6 +219,9 @@ export function LeadDrawer({
     }
 
     setMensagemCampos('Alterações salvas.');
+    if (houveTransferencia(lead.vendedor, campos.vendedor || null)) {
+      await tocarSomTransferencia();
+    }
     onUpdated({
       ...lead,
       nome_lead: campos.nome_lead.trim(),
@@ -208,6 +231,7 @@ export function LeadDrawer({
       valor: valorNumerico,
       vendedor: campos.vendedor || null,
     });
+    await atualizarLogs();
     setTimeout(() => setMensagemCampos(null), 3000);
   }
 
@@ -278,6 +302,7 @@ export function LeadDrawer({
   const whatsappUrl = telefoneParaWhatsapp(lead.telefone);
   const botAtivo = estaComBotAtivo(lead.bot_ativo);
   const ultimaAlteracaoBot = formatarUltimaAlteracaoBot(lead.bot_ativo_alterado_em);
+  const ultimoLogObservacao = logs.find((log) => log.acao.startsWith('observacao_'));
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -527,6 +552,13 @@ export function LeadDrawer({
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
               placeholder="Anote observações sobre este lead..."
             />
+            {ultimoLogObservacao && (
+              <p className="mt-1 text-xs text-gray-500">
+                {ultimoLogObservacao.acao === 'observacao_adicionada' ? 'Adicionada' : 'Alterada'} por{' '}
+                <span className="font-medium">{ultimoLogObservacao.responsavel_nome}</span> em{' '}
+                {new Date(ultimoLogObservacao.created_at).toLocaleString('pt-BR')}
+              </p>
+            )}
             <div className="mt-2 flex items-center justify-between gap-3">
               <button
                 type="button"
@@ -556,7 +588,7 @@ export function LeadDrawer({
             {historico.length === 0 ? (
               <p className="text-xs text-gray-400">Nenhuma movimentação registrada ainda.</p>
             ) : (
-              <ul className="space-y-2">
+              <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
                 {historico.map((item) => (
                   <li key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
                     <div className="flex items-center justify-between">
@@ -569,6 +601,37 @@ export function LeadDrawer({
                       </p>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-500">{item.usuario ?? 'Usuário desconhecido'}</p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              Logs Gerais
+            </h3>
+            {logs.length === 0 ? (
+              <p className="text-xs text-gray-400">Nenhuma ação registrada ainda.</p>
+            ) : (
+              <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
+                {logs.map((log) => (
+                  <li key={log.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-xs font-medium text-gray-800">
+                        {log.acao.replaceAll('_', ' ')}
+                      </p>
+                      <time className="shrink-0 text-xs text-gray-400">
+                        {new Date(log.created_at).toLocaleString('pt-BR')}
+                      </time>
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500">{log.responsavel_nome}</p>
+                    {Array.isArray(log.detalhes.campos_alterados) &&
+                      log.detalhes.campos_alterados.length > 0 && (
+                        <p className="mt-1 text-xs text-gray-400">
+                          Campos: {log.detalhes.campos_alterados.join(', ')}
+                        </p>
+                      )}
                   </li>
                 ))}
               </ul>

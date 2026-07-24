@@ -12,6 +12,7 @@ import { LeadFiltersBar } from '@/components/LeadFiltersBar';
 import { NovoLeadModal } from '@/components/NovoLeadModal';
 import { LeadDrawer } from '@/components/LeadDrawer';
 import { useLeadFilters } from '@/hooks/useLeadFilters';
+import { CarLoading } from '@/components/CarLoading';
 
 function getEstagioConfig(estagio: string) {
   const key = estagio.toLowerCase().trim();
@@ -148,7 +149,7 @@ export default function LeadsPage() {
         </div>
 
         {loading ? (
-          <p className="px-4 py-6 text-sm text-gray-500">Carregando...</p>
+          <CarLoading mensagem="Carregando leads..." />
         ) : leadsFiltrados.length === 0 ? (
           <p className="px-4 py-6 text-sm text-gray-500">Nenhum lead encontrado.</p>
         ) : (

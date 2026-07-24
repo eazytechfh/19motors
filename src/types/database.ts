@@ -85,6 +85,16 @@ export interface LeadHistoricoEstagio {
   created_at: string;
 }
 
+export interface LeadLog {
+  id: number;
+  id_lead: number;
+  acao: string;
+  responsavel_id: string | null;
+  responsavel_nome: string;
+  detalhes: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface Vendedor {
   id: number;
   created_at: string;

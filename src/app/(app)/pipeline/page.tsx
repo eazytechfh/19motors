@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DndContext,
   PointerSensor,
@@ -20,6 +20,11 @@ import { ESTAGIO_CONFIG } from '@/components/StatusBadge';
 import { useLeadFilters } from '@/hooks/useLeadFilters';
 import { formatContagem } from '@/lib/negociacao/tempo';
 import { statusAtendimentoDoLead, type StatusAtendimento } from '@/lib/negociacao/etiquetasAtendimento';
+import { validarDadosParaFechamento } from '@/lib/leads/fechamento';
+import { FechamentoLeadModal } from '@/components/FechamentoLeadModal';
+import { CarLoading } from '@/components/CarLoading';
+import { VendaFechadaCelebration } from '@/components/VendaFechadaCelebration';
+import { tocarSomVendaFechada } from '@/lib/feedback/transferencia';
 
 const TICK_MS = 1_000;
 
@@ -207,10 +212,15 @@ export default function PipelinePage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [leadSelecionado, setLeadSelecionado] = useState<BaseDeLeads | null>(null);
+  const [fechamentoPendente, setFechamentoPendente] = useState<BaseDeLeads | null>(null);
+  const [salvandoFechamento, setSalvandoFechamento] = useState(false);
+  const [erroFechamento, setErroFechamento] = useState<string | null>(null);
+  const [vendaCelebrada, setVendaCelebrada] = useState<string | null>(null);
   const [nomeUsuario, setNomeUsuario] = useState<string>('Usuário');
   const [agora, setAgora] = useState(() => Date.now());
   const filters = useLeadFilters(leads);
   const { leadsFiltrados } = filters;
+  const encerrarCelebracao = useCallback(() => setVendaCelebrada(null), []);
 
   // Tick de 1s só para recalcular a contagem regressiva dos timers nos cards, sem re-buscar
   // os leads do banco.
@@ -310,6 +320,25 @@ export default function PipelinePage() {
     const estagioAnterior = leadAtual.estagio_lead;
     if (normalizeEstagio(estagioAnterior) === novoEstagio) return;
 
+    if (
+      novoEstagio === 'fechado' &&
+      !validarDadosParaFechamento(leadAtual).valido
+    ) {
+      setErroFechamento(null);
+      setFechamentoPendente(leadAtual);
+      return;
+    }
+
+    await moverLead(leadAtual, novoEstagio);
+  }
+
+  async function moverLead(
+    leadAtual: BaseDeLeads,
+    novoEstagio: ColunaId,
+    dadosFechamento?: { nome_lead: string; valor: number }
+  ): Promise<boolean> {
+    const leadId = leadAtual.id;
+    const estagioAnterior = leadAtual.estagio_lead;
     const entrandoEmFollowUp = novoEstagio === 'follow_up';
     const saindoDeFollowUp = normalizeEstagio(estagioAnterior) === 'follow_up' && !entrandoEmFollowUp;
     const followManual = entrandoEmFollowUp ? 'ativo' : saindoDeFollowUp ? 'inativo' : undefined;
@@ -322,6 +351,7 @@ export default function PipelinePage() {
           ? {
               ...l,
               estagio_lead: novoEstagio,
+              ...dadosFechamento,
               ...(followManual ? { follow_manual: followManual } : {}),
             }
           : l
@@ -362,6 +392,7 @@ export default function PipelinePage() {
       .from('BASE_DE_LEADS')
       .update({
         estagio_lead: novoEstagio,
+        ...dadosFechamento,
         ...camposNegociacaoCompletos,
         ...(followManual ? { follow_manual: followManual } : {}),
       })
@@ -384,6 +415,7 @@ export default function PipelinePage() {
         .from('BASE_DE_LEADS')
         .update({
           estagio_lead: novoEstagio,
+          ...dadosFechamento,
           ...camposBasicos,
           ...(followManual ? { follow_manual: followManual } : {}),
         })
@@ -393,11 +425,11 @@ export default function PipelinePage() {
     if (error) {
       // Rollback em caso de erro de escrita, e aviso simples ao usuário.
       setLeads((prev) =>
-        prev.map((l) => (l.id === leadId ? { ...l, estagio_lead: estagioAnterior } : l))
+        prev.map((l) => (l.id === leadId ? leadAtual : l))
       );
       setErrorMessage('Não foi possível mover o lead. Tente novamente.');
       setTimeout(() => setErrorMessage(null), 4000);
-      return;
+      return false;
     }
 
     await supabase.from('lead_historico_estagio').insert({
@@ -406,7 +438,11 @@ export default function PipelinePage() {
       estagio_novo: novoEstagio,
       usuario: nomeUsuario,
     });
-
+    if (novoEstagio === 'fechado') {
+      setVendaCelebrada(dadosFechamento?.nome_lead ?? leadAtual.nome_lead);
+      void tocarSomVendaFechada();
+    }
+    return true;
   }
 
   return (
@@ -425,7 +461,7 @@ export default function PipelinePage() {
       <LeadFiltersBar filters={filters} />
 
       {loading ? (
-        <p className="text-sm text-gray-500">Carregando...</p>
+        <CarLoading mensagem="Carregando pipeline..." />
       ) : (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto overflow-y-hidden pb-4">
@@ -466,6 +502,31 @@ export default function PipelinePage() {
             setLeads((prev) => prev.filter((lead) => lead.id !== leadId));
             setLeadSelecionado(null);
           }}
+        />
+      )}
+
+      {fechamentoPendente && (
+        <FechamentoLeadModal
+          nomeInicial={fechamentoPendente.nome_lead}
+          valorInicial={fechamentoPendente.valor}
+          salvando={salvandoFechamento}
+          erroServidor={erroFechamento}
+          onCancel={() => setFechamentoPendente(null)}
+          onConfirm={async (dados) => {
+            setSalvandoFechamento(true);
+            setErroFechamento(null);
+            const sucesso = await moverLead(fechamentoPendente, 'fechado', dados);
+            setSalvandoFechamento(false);
+            if (sucesso) setFechamentoPendente(null);
+            else setErroFechamento('Não foi possível concluir a venda. Revise os dados e tente novamente.');
+          }}
+        />
+      )}
+
+      {vendaCelebrada && (
+        <VendaFechadaCelebration
+          nomeLead={vendaCelebrada}
+          onFinish={encerrarCelebracao}
         />
       )}
     </div>
