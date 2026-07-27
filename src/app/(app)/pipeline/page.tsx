@@ -20,7 +20,6 @@ import { ESTAGIO_CONFIG } from '@/components/StatusBadge';
 import { useLeadFilters } from '@/hooks/useLeadFilters';
 import { formatContagem } from '@/lib/negociacao/tempo';
 import { statusAtendimentoDoLead, type StatusAtendimento } from '@/lib/negociacao/etiquetasAtendimento';
-import { validarDadosParaFechamento } from '@/lib/leads/fechamento';
 import { FechamentoLeadModal } from '@/components/FechamentoLeadModal';
 import { CarLoading } from '@/components/CarLoading';
 import { VendaFechadaCelebration } from '@/components/VendaFechadaCelebration';
@@ -320,10 +319,7 @@ export default function PipelinePage() {
     const estagioAnterior = leadAtual.estagio_lead;
     if (normalizeEstagio(estagioAnterior) === novoEstagio) return;
 
-    if (
-      novoEstagio === 'fechado' &&
-      !validarDadosParaFechamento(leadAtual).valido
-    ) {
+    if (novoEstagio === 'fechado') {
       setErroFechamento(null);
       setFechamentoPendente(leadAtual);
       return;
@@ -515,10 +511,31 @@ export default function PipelinePage() {
           onConfirm={async (dados) => {
             setSalvandoFechamento(true);
             setErroFechamento(null);
-            const sucesso = await moverLead(fechamentoPendente, 'fechado', dados);
+            const supabase = createClient();
+            const { data, error } = await supabase.rpc('fechar_venda_com_veiculo', {
+              p_id_lead: fechamentoPendente.id,
+              p_nome: dados.nome_lead,
+              p_valor: dados.valor,
+              p_estoque_id: dados.veiculoId,
+            });
             setSalvandoFechamento(false);
-            if (sucesso) setFechamentoPendente(null);
-            else setErroFechamento('Não foi possível concluir a venda. Revise os dados e tente novamente.');
+            const confirmado = (Array.isArray(data) ? data[0] : data) as BaseDeLeads | null;
+            if (error || !confirmado || confirmado.estagio_lead !== 'fechado') {
+              setErroFechamento(error?.message ?? 'Não foi possível concluir a venda. Revise os dados e tente novamente.');
+              return;
+            }
+            setLeads((atuais) => atuais.map((lead) =>
+              lead.id === confirmado.id ? { ...lead, ...confirmado } : lead
+            ));
+            await supabase.from('lead_historico_estagio').insert({
+              id_lead: fechamentoPendente.id,
+              estagio_anterior: fechamentoPendente.estagio_lead,
+              estagio_novo: 'fechado',
+              usuario: nomeUsuario,
+            });
+            setFechamentoPendente(null);
+            setVendaCelebrada(confirmado.nome_lead);
+            void tocarSomVendaFechada();
           }}
         />
       )}

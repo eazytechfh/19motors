@@ -34,3 +34,21 @@ test('migration impede fechamento inválido e cria auditoria geral com RLS', () 
   assert.match(sql, /after insert or update or delete/i);
   assert.match(sql, /lead_excluido/i);
 });
+
+test('fechamento exige veículo em combobox pesquisável e usa transação atômica', () => {
+  const modal = readFileSync('src/components/FechamentoLeadModal.tsx', 'utf8');
+  const pipeline = readFileSync('src/app/(app)/pipeline/page.tsx', 'utf8');
+  const sql = readFileSync('supabase/migrations/0016_venda_vinculada_estoque.sql', 'utf8').toLowerCase();
+
+  assert.match(modal, /\.from\('ESTOQUE'\)/);
+  assert.match(modal, /placeholder="Digite marca, modelo, ano ou placa"/);
+  assert.match(modal, /filteredVehicles/);
+  assert.match(modal, /top-full/);
+  assert.match(modal, /max-h-60/);
+  assert.doesNotMatch(modal, /<select[^>]+value=\{veiculoId\}/);
+  assert.match(pipeline, /\.rpc\('fechar_venda_com_veiculo'/);
+  assert.match(sql, /estoque_veiculo_id/);
+  assert.match(sql, /from public\."estoque"[\s\S]*for update/);
+  assert.match(sql, /set status = 'vendido'/);
+  assert.match(sql, /coalesce\(public\.get_my_cargo\(\), ''\) not in/);
+});
