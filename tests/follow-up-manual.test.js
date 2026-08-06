@@ -89,6 +89,42 @@ test('pipeline usa etapas configuradas e mantém fallback para o trio de follow-
   assert.match(hook, /\.from\('pipeline_etapas'\)/);
 });
 
+test('pipeline acompanha movimentações externas de estagio_lead em tempo real', () => {
+  const pipeline = read('src/app/(app)/pipeline/page.tsx');
+  const migration = read('supabase/migrations/0018_pipeline_leads_realtime.sql').toLowerCase();
+
+  assert.match(pipeline, /\.channel\('pipeline-leads-realtime'\)/);
+  assert.match(pipeline, /event:\s*'UPDATE'[\s\S]*table:\s*'BASE_DE_LEADS'/);
+  assert.match(pipeline, /payload\.new/);
+  assert.match(pipeline, /atualizacoesPendentes/);
+  assert.match(pipeline, /if \(carregandoLeads\)[\s\S]*atualizacoesPendentes\.set/);
+  assert.match(pipeline, /\.subscribe\(\(status\)[\s\S]*status === 'SUBSCRIBED'[\s\S]*fetchLeads/);
+  assert.match(pipeline, /supabase\.removeChannel\(channel\)/);
+  assert.match(migration, /alter publication supabase_realtime add table public\."base_de_leads"/);
+  assert.match(migration, /duplicate_object/);
+});
+
+test('cards exibem etiquetas e vínculos externos atualizam em tempo real', () => {
+  const pipeline = read('src/app/(app)/pipeline/page.tsx');
+  const filters = read('src/hooks/useLeadFilters.ts');
+  const migration = read('supabase/migrations/0019_etiquetas_cards_realtime.sql').toLowerCase();
+
+  assert.match(pipeline, /etiquetas:\s*Etiqueta\[\]/);
+  assert.match(pipeline, /etiquetas\.map\(\(etiqueta\)/);
+  assert.match(pipeline, /backgroundColor:\s*`\$\{etiqueta\.cor\}1a`/);
+  assert.match(pipeline, /etiquetasPorLeadVisiveis/);
+  assert.match(filters, /\.channel\('lead-etiquetas-realtime'\)/);
+  assert.match(filters, /table:\s*'lead_etiquetas'/);
+  assert.match(filters, /refreshEtiquetas\(\)/);
+  assert.match(filters, /refreshRequestId/);
+  assert.match(filters, /\.subscribe\(\(status\)[\s\S]*status === 'SUBSCRIBED'[\s\S]*refreshEtiquetas/);
+  assert.match(filters, /supabase\.removeChannel\(channel\)/);
+  assert.match(migration, /alter publication supabase_realtime add table public\.lead_etiquetas/);
+  assert.match(migration, /insert into public\.lead_etiquetas/);
+  assert.match(migration, /array\[27, 28, 29\]::bigint\[\]/);
+  assert.doesNotMatch(migration, /set etiquetas = etiquetas/);
+});
+
 test('changelog documenta ativação e variáveis do workflow', () => {
   const changelog = read('docs/CHANGELOG.md');
 
@@ -97,5 +133,6 @@ test('changelog documenta ativação e variáveis do workflow', () => {
   assert.match(changelog, /credencial do Supabase/);
   assert.match(changelog, /token e a URL da UAZAPI/);
   assert.match(changelog, /Respondeu Follow Up/);
+  assert.match(changelog, /tempo real/);
   assert.doesNotMatch(changelog, /mover_follow_up_bom_dia|follow_up_bom_dia/i);
 });

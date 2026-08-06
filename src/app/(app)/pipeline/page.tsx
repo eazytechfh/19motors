@@ -12,7 +12,7 @@ import {
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@/lib/supabase/client';
-import type { BaseDeLeads } from '@/types/database';
+import type { BaseDeLeads, Etiqueta } from '@/types/database';
 import { Avatar } from '@/components/Avatar';
 import { LeadDrawer } from '@/components/LeadDrawer';
 import { LeadFiltersBar } from '@/components/LeadFiltersBar';
@@ -66,9 +66,10 @@ interface CardProps {
   onOpen: (lead: BaseDeLeads) => void;
   agora: number;
   statusAtendimento: StatusAtendimento;
+  etiquetas: Etiqueta[];
 }
 
-function LeadCard({ lead, onOpen, agora, statusAtendimento }: CardProps) {
+function LeadCard({ lead, onOpen, agora, statusAtendimento, etiquetas }: CardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
   });
@@ -101,6 +102,24 @@ function LeadCard({ lead, onOpen, agora, statusAtendimento }: CardProps) {
         <p className="truncate text-xs text-gray-600">Interesse: {lead.veiculo_interesse}</p>
       )}
       {lead.vendedor && <p className="truncate text-xs text-gray-400">Vendedor: {lead.vendedor}</p>}
+      {etiquetas.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {etiquetas.map((etiqueta) => (
+            <span
+              key={etiqueta.id}
+              className="max-w-full truncate rounded-full border px-2 py-0.5 text-[10px] font-medium"
+              style={{
+                backgroundColor: `${etiqueta.cor}1a`,
+                borderColor: etiqueta.cor,
+                color: etiqueta.cor,
+              }}
+              title={etiqueta.nome}
+            >
+              {etiqueta.nome}
+            </span>
+          ))}
+        </div>
+      )}
       {mostrarTimer && (
         <TimerNegociacaoCard
           expiraEm={lead.negociacao_expira_em as string}
@@ -120,11 +139,21 @@ interface ColumnProps {
   onOpenLead: (lead: BaseDeLeads) => void;
   agora: number;
   statusAtendimentoPorLead: Map<number, StatusAtendimento>;
+  etiquetasPorLeadVisiveis: Map<number, Etiqueta[]>;
 }
 
 const LEADS_POR_PAGINA = 8;
 
-function Column({ id, label, color, leads, onOpenLead, agora, statusAtendimentoPorLead }: ColumnProps) {
+function Column({
+  id,
+  label,
+  color,
+  leads,
+  onOpenLead,
+  agora,
+  statusAtendimentoPorLead,
+  etiquetasPorLeadVisiveis,
+}: ColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
   const [pagina, setPagina] = useState(1);
 
@@ -165,6 +194,7 @@ function Column({ id, label, color, leads, onOpenLead, agora, statusAtendimentoP
               onOpen={onOpenLead}
               agora={agora}
               statusAtendimento={statusAtendimentoPorLead.get(lead.id) ?? null}
+              etiquetas={etiquetasPorLeadVisiveis.get(lead.id) ?? []}
             />
           ))}
         </div>
@@ -239,6 +269,20 @@ export default function PipelinePage() {
     [filters.etiquetasDisponiveis]
   );
 
+  const etiquetasPorLeadVisiveis = useMemo(() => {
+    const etiquetaPorId = new Map(
+      filters.etiquetasDisponiveis.map((etiqueta) => [etiqueta.id, etiqueta])
+    );
+    const map = new Map<number, Etiqueta[]>();
+    filters.etiquetasPorLead.forEach((ids, leadId) => {
+      const etiquetas = Array.from(ids)
+        .map((id) => etiquetaPorId.get(id))
+        .filter((etiqueta): etiqueta is Etiqueta => Boolean(etiqueta));
+      if (etiquetas.length > 0) map.set(leadId, etiquetas);
+    });
+    return map;
+  }, [filters.etiquetasDisponiveis, filters.etiquetasPorLead]);
+
   const statusAtendimentoPorLead = useMemo(() => {
     const map = new Map<number, StatusAtendimento>();
     leads.forEach((lead) => {
@@ -271,10 +315,33 @@ export default function PipelinePage() {
 
   useEffect(() => {
     let isMounted = true;
+    let carregandoLeads = false;
+    let carregamentoConcluido = false;
+    let recarregarAoConcluir = false;
+    const atualizacoesPendentes = new Map<number, Partial<BaseDeLeads>>();
+    const supabase = createClient();
+
+    function aplicarAtualizacao(atualizado: Partial<BaseDeLeads> & { id: number }) {
+      setLeads((atuais) =>
+        atuais.map((lead) =>
+          lead.id === atualizado.id ? { ...lead, ...atualizado } : lead
+        )
+      );
+      setLeadSelecionado((selecionado) =>
+        selecionado?.id === atualizado.id
+          ? { ...selecionado, ...atualizado }
+          : selecionado
+      );
+    }
 
     async function fetchLeads() {
-      setLoading(true);
-      const supabase = createClient();
+      if (carregandoLeads) {
+        recarregarAoConcluir = true;
+        return;
+      }
+
+      carregandoLeads = true;
+      if (!carregamentoConcluido) setLoading(true);
       const { data, error } = await supabase
         .from('BASE_DE_LEADS')
         .select(
@@ -286,16 +353,74 @@ export default function PipelinePage() {
 
       if (error) {
         console.error('Erro ao buscar leads:', error.message);
-        setLeads([]);
+        if (!carregamentoConcluido) setLeads([]);
+        atualizacoesPendentes.forEach((atualizado, id) =>
+          aplicarAtualizacao({ ...atualizado, id })
+        );
       } else {
-        setLeads((data as unknown as BaseDeLeads[]) ?? []);
+        const recebidos = (data as unknown as BaseDeLeads[]) ?? [];
+        const consolidados = recebidos.map((lead) => ({
+          ...lead,
+          ...atualizacoesPendentes.get(lead.id),
+        }));
+        setLeads(consolidados);
+        setLeadSelecionado((selecionado) => {
+          if (!selecionado) return null;
+          const atualizado = consolidados.find((lead) => lead.id === selecionado.id);
+          return atualizado ? { ...selecionado, ...atualizado } : selecionado;
+        });
       }
+
+      atualizacoesPendentes.clear();
+      carregandoLeads = false;
+      carregamentoConcluido = true;
       setLoading(false);
+
+      if (recarregarAoConcluir) {
+        recarregarAoConcluir = false;
+        void fetchLeads();
+      }
     }
 
-    fetchLeads();
+    const channel = supabase
+      .channel('pipeline-leads-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'BASE_DE_LEADS' },
+        (payload) => {
+          const atualizado = payload.new as BaseDeLeads;
+          if (typeof atualizado.id !== 'number') return;
+
+          if (carregandoLeads) {
+            atualizacoesPendentes.set(atualizado.id, {
+              ...atualizacoesPendentes.get(atualizado.id),
+              ...atualizado,
+            });
+            return;
+          }
+
+          aplicarAtualizacao(atualizado);
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          void fetchLeads();
+        } else if (
+          !carregamentoConcluido &&
+          (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT')
+        ) {
+          void fetchLeads();
+        }
+      });
+
+    const fallbackCarregamento = window.setTimeout(() => {
+      if (!carregamentoConcluido) void fetchLeads();
+    }, 2_000);
+
     return () => {
       isMounted = false;
+      window.clearTimeout(fallbackCarregamento);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
@@ -484,6 +609,7 @@ export default function PipelinePage() {
                 onOpenLead={setLeadSelecionado}
                 agora={agora}
                 statusAtendimentoPorLead={statusAtendimentoPorLead}
+                etiquetasPorLeadVisiveis={etiquetasPorLeadVisiveis}
               />
             ))}
           </div>

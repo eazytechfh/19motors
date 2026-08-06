@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { BaseDeLeads, Etiqueta } from '@/types/database';
 import { isDentroExpediente } from '@/lib/expediente';
@@ -42,17 +42,19 @@ export function useLeadFilters(leads: BaseDeLeads[]) {
 
   const leadIds = useMemo(() => leads.map((lead) => lead.id), [leads]);
   const leadIdsKey = useMemo(() => leadIds.join(','), [leadIds]);
+  const refreshRequestId = useRef(0);
 
   const refreshEtiquetas = useCallback(async () => {
+    const requestId = ++refreshRequestId.current;
     const supabase = createClient();
     const { data: etiquetasData } = await supabase
       .from('etiquetas')
       .select('id, nome, cor, created_at')
       .order('nome');
 
-    setEtiquetasDisponiveis((etiquetasData as Etiqueta[]) ?? []);
-
     if (leadIds.length === 0) {
+      if (requestId !== refreshRequestId.current) return;
+      setEtiquetasDisponiveis((etiquetasData as Etiqueta[]) ?? []);
       setEtiquetasPorLead(new Map());
       return;
     }
@@ -68,52 +70,40 @@ export function useLeadFilters(leads: BaseDeLeads[]) {
       etiquetas.add(vinculo.id_etiqueta);
       next.set(vinculo.id_lead, etiquetas);
     });
+
+    if (requestId !== refreshRequestId.current) return;
+    setEtiquetasDisponiveis((etiquetasData as Etiqueta[]) ?? []);
     setEtiquetasPorLead(next);
   }, [leadIds, leadIdsKey]);
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function fetchEtiquetas() {
-      const supabase = createClient();
-      const { data: etiquetasData } = await supabase
-        .from('etiquetas')
-        .select('id, nome, cor, created_at')
-        .order('nome');
-
-      if (!isMounted) return;
-      setEtiquetasDisponiveis((etiquetasData as Etiqueta[]) ?? []);
-
-      if (leadIds.length === 0) {
-        setEtiquetasPorLead(new Map());
-        return;
-      }
-
-      const { data: vinculosData } = await supabase
-        .from('lead_etiquetas')
-        .select('id_lead, id_etiqueta')
-        .in('id_lead', leadIds);
-
-      if (!isMounted) return;
-      const next = new Map<number, Set<number>>();
-      ((vinculosData as { id_lead: number; id_etiqueta: number }[]) ?? []).forEach((vinculo) => {
-        const etiquetas = next.get(vinculo.id_lead) ?? new Set<number>();
-        etiquetas.add(vinculo.id_etiqueta);
-        next.set(vinculo.id_lead, etiquetas);
-      });
-      setEtiquetasPorLead(next);
-    }
-
-    fetchEtiquetas();
+    const supabase = createClient();
 
     function handleLeadEtiquetasUpdated() {
-      refreshEtiquetas();
+      void refreshEtiquetas();
     }
+
+    const channel = supabase
+      .channel('lead-etiquetas-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'lead_etiquetas' },
+        () => void refreshEtiquetas()
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') void refreshEtiquetas();
+      });
+
+    const fallbackCarregamento = window.setTimeout(() => {
+      void refreshEtiquetas();
+    }, 2_000);
 
     window.addEventListener('lead-etiquetas-updated', handleLeadEtiquetasUpdated);
     return () => {
-      isMounted = false;
+      refreshRequestId.current += 1;
+      window.clearTimeout(fallbackCarregamento);
       window.removeEventListener('lead-etiquetas-updated', handleLeadEtiquetasUpdated);
+      void supabase.removeChannel(channel);
     };
   }, [leadIds, leadIdsKey, refreshEtiquetas]);
 
