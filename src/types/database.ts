@@ -53,6 +53,10 @@ export interface BaseDeLeads {
   data_nascimento: string | null;
   score_serasa: number | null;
   follow_manual: 'ativo' | 'inativo' | string | null;
+  ja_recebeu_msg: string | null;
+  erro_follow_manual: string | null;
+  /** Compatibilidade com os códigos de etiqueta gravados pelo workflow legado do n8n. */
+  etiquetas: number[];
   /** Prazo do cronômetro de 30min de "Em Negociação"; null quando o lead não está nesse estágio. */
   negociacao_expira_em: string | null;
   /** Marca quando o popup/notificação de expiração já foi disparado, para não repetir. */
@@ -83,6 +87,17 @@ export interface LeadHistoricoEstagio {
   estagio_novo: string;
   usuario: string | null;
   created_at: string;
+}
+
+export interface PipelineEtapa {
+  id: number;
+  slug: string;
+  nome: string;
+  cor: string;
+  ordem: number;
+  is_inicial: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface LeadLog {

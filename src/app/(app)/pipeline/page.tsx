@@ -16,8 +16,9 @@ import type { BaseDeLeads } from '@/types/database';
 import { Avatar } from '@/components/Avatar';
 import { LeadDrawer } from '@/components/LeadDrawer';
 import { LeadFiltersBar } from '@/components/LeadFiltersBar';
-import { ESTAGIO_CONFIG } from '@/components/StatusBadge';
 import { useLeadFilters } from '@/hooks/useLeadFilters';
+import { usePipelineEtapas } from '@/hooks/usePipelineEtapas';
+import { etapaDe } from '@/lib/pipeline-etapas';
 import { formatContagem } from '@/lib/negociacao/tempo';
 import { statusAtendimentoDoLead, type StatusAtendimento } from '@/lib/negociacao/etiquetasAtendimento';
 import { FechamentoLeadModal } from '@/components/FechamentoLeadModal';
@@ -27,22 +28,12 @@ import { tocarSomVendaFechada } from '@/lib/feedback/transferencia';
 
 const TICK_MS = 1_000;
 
-// As colunas do Pipeline são geradas a partir de ESTAGIO_CONFIG (StatusBadge.tsx), que contém
-// exatamente os valores aceitos pela constraint CHECK de estagio_lead no banco. Não adicione um
-// estágio aqui sem confirmar antes que o valor existe na constraint real — caso contrário o
-// drag-and-drop vai falhar com erro 23514 ao tentar salvar.
-const COLUNAS = (Object.keys(ESTAGIO_CONFIG) as Array<keyof typeof ESTAGIO_CONFIG>).map((id) => ({
-  id,
-  label: ESTAGIO_CONFIG[id].label,
-  color: ESTAGIO_CONFIG[id].color,
-}));
-
-type ColunaId = (typeof COLUNAS)[number]['id'];
+// Os slugs válidos vêm de pipeline_etapas. Etapas legadas aparecem apenas para leitura e não
+// aceitam novos cards, evitando que um valor fora da configuração seja persistido.
+type ColunaId = string;
 
 function normalizeEstagio(estagio: string): ColunaId {
-  const key = estagio.toLowerCase().trim();
-  const found = COLUNAS.find((c) => c.id === key);
-  return found ? found.id : 'oportunidade';
+  return estagio.toLowerCase().trim();
 }
 
 // Timer de negociação exibido no próprio card do Pipeline: quando o lead já tem a etiqueta
@@ -217,9 +208,24 @@ export default function PipelinePage() {
   const [vendaCelebrada, setVendaCelebrada] = useState<string | null>(null);
   const [nomeUsuario, setNomeUsuario] = useState<string>('Usuário');
   const [agora, setAgora] = useState(() => Date.now());
+  const { etapas, erroEtapas } = usePipelineEtapas();
   const filters = useLeadFilters(leads);
   const { leadsFiltrados } = filters;
   const encerrarCelebracao = useCallback(() => setVendaCelebrada(null), []);
+
+  const colunas = useMemo(() => {
+    const configuradas = etapas.map((etapa) => ({
+      id: etapa.slug,
+      label: etapa.nome,
+      color: etapa.cor,
+      configurada: true,
+    }));
+    const conhecidas = new Set(configuradas.map((coluna) => coluna.id));
+    const legadas = Array.from(new Set(leadsFiltrados.map((lead) => normalizeEstagio(lead.estagio_lead))))
+      .filter((slug) => slug && !conhecidas.has(slug))
+      .map((slug) => ({ id: slug, label: slug, color: '#6b7280', configurada: false }));
+    return [...configuradas, ...legadas];
+  }, [etapas, leadsFiltrados]);
 
   // Tick de 1s só para recalcular a contagem regressiva dos timers nos cards, sem re-buscar
   // os leads do banco.
@@ -294,13 +300,13 @@ export default function PipelinePage() {
   }, []);
 
   const leadsPorColuna = useMemo(() => {
-    const map = new Map<ColunaId, BaseDeLeads[]>(COLUNAS.map((c) => [c.id, []]));
+    const map = new Map<ColunaId, BaseDeLeads[]>(colunas.map((c) => [c.id, []]));
     leadsFiltrados.forEach((lead) => {
       const coluna = normalizeEstagio(lead.estagio_lead);
       map.get(coluna)?.push(lead);
     });
     return map;
-  }, [leadsFiltrados]);
+  }, [colunas, leadsFiltrados]);
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -308,10 +314,11 @@ export default function PipelinePage() {
 
     const leadId = Number(active.id);
     const overId = over.id;
-    const colunaDireta = COLUNAS.find((c) => c.id === overId)?.id;
+    const colunaDireta = colunas.find((c) => c.id === overId && c.configurada)?.id;
     const leadDestino = leads.find((l) => l.id === Number(overId));
     const novoEstagio = colunaDireta ?? (leadDestino ? normalizeEstagio(leadDestino.estagio_lead) : null);
     if (!novoEstagio) return;
+    if (!colunas.some((coluna) => coluna.id === novoEstagio && coluna.configurada)) return;
 
     const leadAtual = leads.find((l) => l.id === leadId);
     if (!leadAtual) return;
@@ -336,8 +343,7 @@ export default function PipelinePage() {
     const leadId = leadAtual.id;
     const estagioAnterior = leadAtual.estagio_lead;
     const entrandoEmFollowUp = novoEstagio === 'follow_up';
-    const saindoDeFollowUp = normalizeEstagio(estagioAnterior) === 'follow_up' && !entrandoEmFollowUp;
-    const followManual = entrandoEmFollowUp ? 'ativo' : saindoDeFollowUp ? 'inativo' : undefined;
+    const followManual = entrandoEmFollowUp ? 'ativo' : 'inativo';
 
     // Optimistic update: atualiza a UI imediatamente para dar sensação de resposta instantânea
     // no drag and drop, antes mesmo de confirmar a escrita no banco.
@@ -348,7 +354,8 @@ export default function PipelinePage() {
               ...l,
               estagio_lead: novoEstagio,
               ...dadosFechamento,
-              ...(followManual ? { follow_manual: followManual } : {}),
+              follow_manual: followManual,
+              ...(entrandoEmFollowUp ? { ja_recebeu_msg: null, erro_follow_manual: null } : {}),
             }
           : l
       )
@@ -390,7 +397,7 @@ export default function PipelinePage() {
         estagio_lead: novoEstagio,
         ...dadosFechamento,
         ...camposNegociacaoCompletos,
-        ...(followManual ? { follow_manual: followManual } : {}),
+        follow_manual: followManual,
       })
       .eq('id', leadId);
 
@@ -413,7 +420,7 @@ export default function PipelinePage() {
           estagio_lead: novoEstagio,
           ...dadosFechamento,
           ...camposBasicos,
-          ...(followManual ? { follow_manual: followManual } : {}),
+          follow_manual: followManual,
         })
         .eq('id', leadId));
     }
@@ -454,6 +461,12 @@ export default function PipelinePage() {
         <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{errorMessage}</div>
       )}
 
+      {erroEtapas && (
+        <div className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700">
+          Não foi possível carregar as etapas configuradas. O padrão local está em uso.
+        </div>
+      )}
+
       <LeadFiltersBar filters={filters} />
 
       {loading ? (
@@ -461,7 +474,7 @@ export default function PipelinePage() {
       ) : (
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <div className="flex min-h-0 flex-1 gap-4 overflow-x-auto overflow-y-hidden pb-4">
-            {COLUNAS.map((coluna) => (
+            {colunas.map((coluna) => (
               <Column
                 key={coluna.id}
                 id={coluna.id}
@@ -481,14 +494,14 @@ export default function PipelinePage() {
         <LeadDrawer
           lead={leadSelecionado}
           estagioLabel={
-            COLUNAS.find((c) => c.id === normalizeEstagio(leadSelecionado.estagio_lead))?.label ??
+            colunas.find((c) => c.id === normalizeEstagio(leadSelecionado.estagio_lead))?.label ??
             'Oportunidade'
           }
           estagioColor={
-            COLUNAS.find((c) => c.id === normalizeEstagio(leadSelecionado.estagio_lead))?.color ??
+            colunas.find((c) => c.id === normalizeEstagio(leadSelecionado.estagio_lead))?.color ??
             '#22c55e'
           }
-          estagioLabelOf={(estagio) => COLUNAS.find((c) => c.id === normalizeEstagio(estagio))?.label ?? estagio}
+          estagioLabelOf={(estagio) => etapaDe(estagio, etapas).nome}
           onClose={() => setLeadSelecionado(null)}
           onUpdated={(atualizado) => {
             setLeadSelecionado(atualizado);

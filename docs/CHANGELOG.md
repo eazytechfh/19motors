@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-08-06 - Follow-up Manual Completo
+
+- Adicionadas as etapas `Follow-up`, `Respondeu Follow Up` e `Resgate` ao pipeline configurável.
+- Respostas humanas registradas em `dezenovemotors_chat_histories` movem leads elegíveis para `Respondeu Follow Up`.
+- A cadência existente no workflow duplicado da Ale's Car continua enviando o primeiro contato às 10h e o segundo às 19h.
+- Números com falha definitiva também vão para `Resgate` e recebem a etiqueta `Número Inválido`.
+- A coluna legada `BASE_DE_LEADS.etiquetas` aceita os códigos `27`, `28` e `29` do workflow duplicado e os converte para as etiquetas reais do CRM-19-MOTORS.
+- Antes de ativá-lo no n8n, troque a credencial do Supabase e o token e a URL da UAZAPI nos nós já existentes.
+- A migration `0017_follow_up_manual_completo.sql` deve ser aplicada antes da ativação do workflow.
+
 ## 2026-07-03 - Ajuste de scroll do Pipeline
 
 ### Contexto
