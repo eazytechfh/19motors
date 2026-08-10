@@ -6,7 +6,7 @@
 - Respostas humanas registradas em `dezenovemotors_chat_histories` movem leads elegíveis para `Respondeu Follow Up`.
 - A cadência existente no workflow duplicado da Ale's Car continua enviando o primeiro contato às 10h e o segundo às 19h.
 - Números com falha definitiva também vão para `Resgate` e recebem a etiqueta `Número Inválido`.
-- A coluna legada `BASE_DE_LEADS.etiquetas` aceita os códigos `27`, `28` e `29` do workflow duplicado e os converte para as etiquetas reais do CRM-19-MOTORS.
+- A coluna legada `BASE_DE_LEADS.etiquetas` aceita os códigos `49` (follow 1), `50` (follow 2) e `51` (Número Inválido) do workflow duplicado e os converte para as etiquetas reais do CRM-19-MOTORS.
 - O Pipeline acompanha em tempo real mudanças externas em `estagio_lead`, inclusive as realizadas pelo n8n e por triggers do banco.
 - As etiquetas vinculadas aparecem nos cards e alterações externas em `lead_etiquetas` são refletidas em tempo real; códigos legados já gravados também são reconciliados.
 - Antes de ativá-lo no n8n, troque a credencial do Supabase e o token e a URL da UAZAPI nos nós já existentes.

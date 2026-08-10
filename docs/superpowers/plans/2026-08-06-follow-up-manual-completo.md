@@ -125,7 +125,7 @@ Expected: PASS e saída sem erros TypeScript.
 - Test: `tests/follow-up-manual.test.js`
 
 **Interfaces:**
-- Consumes: atualizações diretas do workflow legado em `BASE_DE_LEADS`, inclusive `etiquetas={27|28|29}` e `ja_recebeu_msg='2º msg'`.
+- Consumes: atualizações diretas do workflow legado em `BASE_DE_LEADS`, inclusive `etiquetas={49|50|51}` e `ja_recebeu_msg='2º msg'`.
 - Produces: vínculos normalizados em `lead_etiquetas`, preservando a cadência e a estrutura visual do cenário duplicado.
 
 - [ ] **Step 1: Testar o contrato legado antes da compatibilidade**
@@ -145,7 +145,7 @@ Expected: FAIL porque a coluna e o trigger de compatibilidade ainda não existem
 
 - [ ] **Step 3: Implementar a camada de compatibilidade no banco**
 
-O banco deve aceitar as escritas originais do cenário duplicado e traduzi-las para as etiquetas locais por nome, sem pressupor que os IDs reais sejam 27, 28 e 29.
+O banco deve aceitar as escritas originais do cenário duplicado e traduzir os códigos externos 49, 50 e 51 para as etiquetas locais por nome, sem pressupor que esses sejam os IDs reais no CRM-19-MOTORS.
 
 - [ ] **Step 4: Executar o contrato completo**
 

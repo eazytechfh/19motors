@@ -44,12 +44,20 @@ test('contrato legado do workflow duplicado sincroniza etiquetas para a relaçã
   assert.match(sql, /'follow 2'/);
   assert.match(sql, /add column if not exists etiquetas bigint\[\] not null default '\{\}'::bigint\[\]/);
   assert.match(sql, /create or replace function public\.compatibilizar_etiquetas_workflow_ales/);
-  assert.match(sql, /27[\s\S]*'número inválido'/i);
-  assert.match(sql, /28[\s\S]*'follow 1'/);
-  assert.match(sql, /29[\s\S]*'follow 2'/);
+  assert.match(sql, /when 49 then 'follow 1'/);
+  assert.match(sql, /when 50 then 'follow 2'/);
+  assert.match(sql, /when 51 then 'número inválido'/i);
+  assert.doesNotMatch(sql, /when (?:27|28|29) then/);
+  assert.match(sql, /else[\s\S]*from public\.etiquetas[\s\S]*where id = etiqueta_legada/);
+  assert.match(sql, /tg_op = 'update'[\s\S]*old\.etiquetas[\s\S]*new\.etiquetas/);
+  assert.match(sql, /foreach etiqueta_legada in array coalesce\(new\.etiquetas, '\{\}'::bigint\[\]\) loop/);
+  assert.doesNotMatch(sql, /if new\.etiquetas is null then[\s\S]*return new/);
   assert.match(sql, /create trigger trg_compatibilizar_etiquetas_workflow_ales/);
   assert.match(sql, /insert into public\.lead_etiquetas/);
-  assert.doesNotMatch(sql, /insert into public\.etiquetas[\s\S]*\(27,|\(28,|\(29,/);
+  assert.doesNotMatch(
+    sql,
+    /insert into public\.etiquetas\s*\([^)]*\)\s*values\s*\(\s*(?:49|50|51)\b/
+  );
 });
 
 test('workflow legado pode manter o valor literal da segunda mensagem', () => {
@@ -120,9 +128,29 @@ test('cards exibem etiquetas e vínculos externos atualizam em tempo real', () =
   assert.match(filters, /\.subscribe\(\(status\)[\s\S]*status === 'SUBSCRIBED'[\s\S]*refreshEtiquetas/);
   assert.match(filters, /supabase\.removeChannel\(channel\)/);
   assert.match(migration, /alter publication supabase_realtime add table public\.lead_etiquetas/);
+  assert.match(migration, /create or replace function public\.compatibilizar_etiquetas_workflow_ales/);
+  assert.match(migration, /where id = etiqueta_legada/);
+  assert.match(migration, /tg_op = 'update'[\s\S]*old\.etiquetas[\s\S]*new\.etiquetas/);
+  assert.match(migration, /foreach etiqueta_legada in array coalesce\(new\.etiquetas, '\{\}'::bigint\[\]\) loop/);
+  assert.doesNotMatch(migration, /if new\.etiquetas is null then[\s\S]*return new/);
   assert.match(migration, /insert into public\.lead_etiquetas/);
-  assert.match(migration, /array\[27, 28, 29\]::bigint\[\]/);
+  assert.match(migration, /array\[49, 50, 51\]::bigint\[\]/);
+  assert.match(migration, /unnest\(l\.etiquetas\)[\s\S]*codigo not in \(49, 50, 51\)/);
+  assert.doesNotMatch(migration, /array\[27, 28, 29\]|codigo not in \(27, 28, 29\)/);
   assert.doesNotMatch(migration, /set etiquetas = etiquetas/);
+});
+
+test('migration corretiva atualiza instalações que receberam o mapa antigo', () => {
+  const migrationPath = 'supabase/migrations/0020_corrigir_codigos_etiquetas_workflow.sql';
+  assert.equal(fs.existsSync(path.join(root, migrationPath)), true);
+
+  const migration = read(migrationPath).toLowerCase();
+  assert.match(migration, /create or replace function public\.compatibilizar_etiquetas_workflow_ales/);
+  assert.match(migration, /when 49 then 'follow 1'/);
+  assert.match(migration, /when 50 then 'follow 2'/);
+  assert.match(migration, /when 51 then 'número inválido'/i);
+  assert.match(migration, /array\[27, 28, 29, 49, 50, 51\]::bigint\[\]/);
+  assert.match(migration, /unnest\(l\.etiquetas\)[\s\S]*codigo not in \(49, 50, 51\)/);
 });
 
 test('changelog documenta ativação e variáveis do workflow', () => {

@@ -177,7 +177,7 @@ where not exists (
 );
 
 -- Compatibilidade com o workflow duplicado da Ale's Car. Nesse contrato, os
--- números 27, 28 e 29 são códigos semânticos gravados em BASE_DE_LEADS.etiquetas;
+-- números 49, 50 e 51 são códigos semânticos gravados em BASE_DE_LEADS.etiquetas;
 -- eles não são reutilizados como IDs reais no CRM-19-MOTORS.
 create or replace function public.compatibilizar_etiquetas_workflow_ales()
 returns trigger language plpgsql security definer set search_path = public as $$
@@ -186,8 +186,14 @@ declare
   etiqueta_nome text;
   etiqueta_real_id bigint;
 begin
-  if new.etiquetas is null then
-    return new;
+  -- Remove apenas vínculos de IDs locais que saíram do array legado.
+  -- Relações criadas diretamente no CRM e ausentes de OLD.etiquetas são preservadas.
+  if tg_op = 'UPDATE' then
+    delete from public.lead_etiquetas le
+    where le.id_lead = new.id
+      and le.id_etiqueta = any(coalesce(old.etiquetas, '{}'::bigint[]))
+      and not (le.id_etiqueta = any(coalesce(new.etiquetas, '{}'::bigint[])))
+      and le.id_etiqueta not in (49, 50, 51);
   end if;
 
   delete from public.lead_etiquetas le
@@ -196,11 +202,12 @@ begin
     and le.id_etiqueta = e.id
     and lower(btrim(e.nome)) in ('número inválido', 'follow 1', 'follow 2');
 
-  foreach etiqueta_legada in array new.etiquetas loop
+  foreach etiqueta_legada in array coalesce(new.etiquetas, '{}'::bigint[]) loop
+    etiqueta_real_id := null;
     etiqueta_nome := case etiqueta_legada
-      when 27 then 'Número Inválido'
-      when 28 then 'follow 1'
-      when 29 then 'follow 2'
+      when 49 then 'follow 1'
+      when 50 then 'follow 2'
+      when 51 then 'Número Inválido'
       else null
     end;
 
@@ -210,12 +217,16 @@ begin
       where lower(btrim(nome)) = lower(btrim(etiqueta_nome))
       order by id
       limit 1;
+    else
+      select id into etiqueta_real_id
+      from public.etiquetas
+      where id = etiqueta_legada;
+    end if;
 
-      if etiqueta_real_id is not null then
-        insert into public.lead_etiquetas (id_lead, id_etiqueta)
-        values (new.id, etiqueta_real_id)
-        on conflict do nothing;
-      end if;
+    if etiqueta_real_id is not null then
+      insert into public.lead_etiquetas (id_lead, id_etiqueta)
+      values (new.id, etiqueta_real_id)
+      on conflict do nothing;
     end if;
   end loop;
 
