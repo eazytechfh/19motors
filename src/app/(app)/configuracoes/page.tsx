@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { Cargo, Etiqueta, Profile, Vendedor } from '@/types/database';
 import { Avatar } from '@/components/Avatar';
+import { ExcluirVendedorModal } from '@/components/ExcluirVendedorModal';
 
 type Tab = 'novo-usuario' | 'usuarios' | 'etiquetas' | 'fila' | 'credenciais' | 'aparencia';
 
@@ -196,6 +197,8 @@ function GerenciarUsuariosTab() {
   const [acaoEmAndamento, setAcaoEmAndamento] = useState<string | null>(null);
   const [mensagemErro, setMensagemErro] = useState<string | null>(null);
   const [linkReset, setLinkReset] = useState<{ email: string; link: string } | null>(null);
+  const [excluindoAlvo, setExcluindoAlvo] = useState<Profile | null>(null);
+  const [excluindoLoading, setExcluindoLoading] = useState(false);
 
   useEffect(() => {
     async function fetchProfiles() {
@@ -258,6 +261,34 @@ function GerenciarUsuariosTab() {
 
     setLinkReset({ email, link: data.link });
   }
+
+  async function excluirVendedor(redistribuirPara: string | null) {
+    if (!excluindoAlvo) return;
+    setExcluindoLoading(true);
+    setMensagemErro(null);
+
+    const response = await fetch(`/api/users/${excluindoAlvo.id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ redistribuirPara }),
+    });
+    const data = await response.json();
+
+    setExcluindoLoading(false);
+
+    if (!response.ok) {
+      setMensagemErro(data.error ?? 'Erro ao excluir vendedor.');
+      return;
+    }
+
+    setProfiles((prev) => prev.filter((p) => p.id !== excluindoAlvo.id));
+    setExcluindoAlvo(null);
+  }
+
+  const outrosVendedoresAtivos = (idExcluido: string) =>
+    profiles
+      .filter((p) => p.cargo === 'vendedor' && !p.desativado && p.id !== idExcluido && p.nome)
+      .map((p) => ({ id: p.id, nome: p.nome as string }));
 
   if (loading) return <p className="text-sm text-gray-500">Carregando...</p>;
 
@@ -330,6 +361,15 @@ function GerenciarUsuariosTab() {
                         ? 'Reativar'
                         : 'Desativar'}
                   </button>
+                  {p.cargo === 'vendedor' && (
+                    <button
+                      type="button"
+                      onClick={() => setExcluindoAlvo(p)}
+                      className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                    >
+                      Excluir
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -374,6 +414,16 @@ function GerenciarUsuariosTab() {
             </button>
           </div>
         </div>
+      )}
+
+      {excluindoAlvo && (
+        <ExcluirVendedorModal
+          vendedorNome={excluindoAlvo.nome ?? excluindoAlvo.email}
+          destinos={outrosVendedoresAtivos(excluindoAlvo.id)}
+          loading={excluindoLoading}
+          onCancel={() => setExcluindoAlvo(null)}
+          onConfirm={excluirVendedor}
+        />
       )}
     </div>
   );
