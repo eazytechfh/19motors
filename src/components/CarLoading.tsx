@@ -12,7 +12,7 @@ export function CarLoading({ mensagem = 'Carregando...' }: CarLoadingProps) {
           <span className="car-loading-wheel car-loading-wheel-right" />
         </div>
       </div>
-      <span className="text-sm text-gray-500">{mensagem}</span>
+      <span className="text-sm text-gray-500 dark:text-gray-400">{mensagem}</span>
     </div>
   );
 }

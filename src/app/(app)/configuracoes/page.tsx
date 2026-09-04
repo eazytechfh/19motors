@@ -60,7 +60,7 @@ export default function ConfiguracoesPage() {
         <h1 className="text-2xl font-bold text-foreground">Configurações</h1>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b border-gray-200">
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-800">
         {visibleTabs.map((t) => (
           <button
             key={t.id}
@@ -69,7 +69,7 @@ export default function ConfiguracoesPage() {
             className={`border-b-2 px-3 py-2 text-sm font-medium transition ${
               tab === t.id
                 ? 'border-primary text-foreground'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                : 'border-transparent text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200'
             }`}
           >
             {t.label}
@@ -125,48 +125,48 @@ function CriarUsuarioTab() {
   return (
     <form onSubmit={handleSubmit} className="max-w-md space-y-4 rounded-xl bg-card p-5 shadow-sm">
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Nome</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
         <input
           required
           value={nome}
           onChange={(e) => setNome(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">E-mail</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Senha provisória</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Senha provisória</label>
         <input
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Telefone</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Telefone</label>
         <input
           value={telefone}
           onChange={(e) => setTelefone(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium text-gray-700">Cargo</label>
+        <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Cargo</label>
         <select
           value={cargo}
           onChange={(e) => setCargo(e.target.value as Cargo)}
-          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         >
           <option value="vendedor">Vendedor</option>
           <option value="gerente">Gerente</option>
@@ -175,7 +175,7 @@ function CriarUsuarioTab() {
       </div>
 
       {mensagem && (
-        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600' : 'text-green-600'}`}>
+        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
           {mensagem.texto}
         </p>
       )}
@@ -290,18 +290,18 @@ function GerenciarUsuariosTab() {
       .filter((p) => p.cargo === 'vendedor' && !p.desativado && p.id !== idExcluido && p.nome)
       .map((p) => ({ id: p.id, nome: p.nome as string }));
 
-  if (loading) return <p className="text-sm text-gray-500">Carregando...</p>;
+  if (loading) return <p className="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>;
 
   return (
     <div className="space-y-3">
       {mensagemErro && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{mensagemErro}</p>
+        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-400">{mensagemErro}</p>
       )}
 
       <div className="overflow-x-auto rounded-xl bg-card shadow-sm">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs uppercase text-gray-500">
+            <tr className="border-b border-gray-200 text-left text-xs uppercase text-gray-500 dark:border-gray-800 dark:text-gray-400">
               <th className="px-4 py-3">Nome</th>
               <th className="px-4 py-3">E-mail</th>
               <th className="px-4 py-3">Cargo</th>
@@ -311,7 +311,7 @@ function GerenciarUsuariosTab() {
           </thead>
           <tbody>
             {profiles.map((p) => (
-              <tr key={p.id} className="border-b border-gray-100">
+              <tr key={p.id} className="border-b border-gray-100 dark:border-gray-800">
                 <td className="px-4 py-3">{p.nome ?? '—'}</td>
                 <td className="px-4 py-3">{p.email}</td>
                 <td className="px-4 py-3">
@@ -319,7 +319,7 @@ function GerenciarUsuariosTab() {
                     value={p.cargo}
                     onChange={(e) => alterarCargo(p.id, e.target.value as Cargo)}
                     disabled={p.cargo === 'admin_master'}
-                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs disabled:opacity-60"
+                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs disabled:opacity-60 dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                   >
                     <option value="vendedor">Vendedor</option>
                     <option value="gerente">Gerente</option>
@@ -330,7 +330,7 @@ function GerenciarUsuariosTab() {
                 <td className="px-4 py-3">
                   <span
                     className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      p.desativado ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+                      p.desativado ? 'bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400' : 'bg-green-50 text-green-600 dark:bg-green-950/40 dark:text-green-400'
                     }`}
                   >
                     {p.desativado ? 'Desativado' : 'Ativo'}
@@ -341,7 +341,7 @@ function GerenciarUsuariosTab() {
                     type="button"
                     onClick={() => resetarSenha(p.id, p.email)}
                     disabled={acaoEmAndamento === `reset-${p.id}`}
-                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-60"
+                    className="rounded-lg border border-gray-300 px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:hover:bg-gray-800"
                   >
                     {acaoEmAndamento === `reset-${p.id}` ? 'Gerando...' : 'Resetar senha'}
                   </button>
@@ -351,8 +351,8 @@ function GerenciarUsuariosTab() {
                     disabled={acaoEmAndamento === `ban-${p.id}` || p.cargo === 'admin_master'}
                     className={`rounded-lg border px-2 py-1 text-xs disabled:opacity-60 ${
                       p.desativado
-                        ? 'border-green-300 text-green-600 hover:bg-green-50'
-                        : 'border-red-300 text-red-600 hover:bg-red-50'
+                        ? 'border-green-300 text-green-600 hover:bg-green-50 dark:border-green-900 dark:text-green-400 dark:hover:bg-green-950/40'
+                        : 'border-red-300 text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40'
                     }`}
                   >
                     {acaoEmAndamento === `ban-${p.id}`
@@ -365,7 +365,7 @@ function GerenciarUsuariosTab() {
                     <button
                       type="button"
                       onClick={() => setExcluindoAlvo(p)}
-                      className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50"
+                      className="rounded-lg border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
                     >
                       Excluir
                     </button>
@@ -383,18 +383,18 @@ function GerenciarUsuariosTab() {
           onClick={() => setLinkReset(null)}
         >
           <div
-            className="w-full max-w-lg rounded-xl bg-white p-6"
+            className="w-full max-w-lg rounded-xl bg-card p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="mb-1 text-sm font-semibold text-foreground">Link de redefinição de senha</h3>
-            <p className="mb-3 text-xs text-gray-500">
+            <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
               Envie este link para <strong>{linkReset.email}</strong>. Ele expira após o primeiro uso.
             </p>
             <div className="flex items-center gap-2">
               <input
                 readOnly
                 value={linkReset.link}
-                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs"
+                className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-xs dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 onFocus={(e) => e.target.select()}
               />
               <button
@@ -408,7 +408,7 @@ function GerenciarUsuariosTab() {
             <button
               type="button"
               onClick={() => setLinkReset(null)}
-              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm dark:border-gray-700"
             >
               Fechar
             </button>
@@ -482,20 +482,20 @@ function EtiquetasTab() {
     <div className="max-w-lg space-y-4">
       <form onSubmit={adicionar} className="flex items-end gap-2 rounded-xl bg-card p-4 shadow-sm">
         <div className="flex-1">
-          <label className="mb-1 block text-sm font-medium text-gray-700">Nome</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Nome</label>
           <input
             value={nome}
             onChange={(e) => setNome(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Cor</label>
+          <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">Cor</label>
           <input
             type="color"
             value={cor}
             onChange={(e) => setCor(e.target.value)}
-            className="h-10 w-14 rounded-lg border border-gray-300"
+            className="h-10 w-14 rounded-lg border border-gray-300 dark:border-gray-700"
           />
         </div>
         <button
@@ -508,13 +508,13 @@ function EtiquetasTab() {
       </form>
 
       {mensagem && (
-        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600' : 'text-green-600'}`} role="status">
+        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`} role="status">
           {mensagem.texto}
         </p>
       )}
 
       {loading ? (
-        <p className="text-sm text-gray-500">Carregando...</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>
       ) : (
         <ul className="space-y-2">
           {etiquetas.map((etq) => (
@@ -524,12 +524,12 @@ function EtiquetasTab() {
             >
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full" style={{ backgroundColor: etq.cor }} />
-                <span className="text-sm text-gray-800">{etq.nome}</span>
+                <span className="text-sm text-gray-800 dark:text-gray-200">{etq.nome}</span>
               </div>
               <button
                 type="button"
                 onClick={() => remover(etq.id)}
-                className="text-xs text-red-600 hover:underline"
+                className="text-xs text-red-600 hover:underline dark:text-red-400"
               >
                 Remover
               </button>
@@ -565,7 +565,7 @@ function FilaAtendimentoTab() {
     fetchFila();
   }, []);
 
-  if (loading) return <p className="text-sm text-gray-500">Carregando...</p>;
+  if (loading) return <p className="text-sm text-gray-500 dark:text-gray-400">Carregando...</p>;
 
   // A coluna "atender" da tabela VENDEDORES indica a posição de cada vendedor na fila de
   // distribuição de leads: "vez" é quem recebe o próximo lead, "espera" é quem está aguardando
@@ -581,27 +581,27 @@ function FilaAtendimentoTab() {
   return (
     <div className="max-w-2xl space-y-6">
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
           Vendedor da vez
         </h2>
         {daVez.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum vendedor está marcado como &quot;vez&quot; agora.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum vendedor está marcado como &quot;vez&quot; agora.</p>
         ) : (
           <div className="space-y-2">
             {daVez.map((v) => (
               <div
                 key={v.id}
-                className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4"
+                className="flex items-center gap-3 rounded-xl border border-green-200 bg-green-50 p-4 dark:border-green-900 dark:bg-green-950/30"
               >
                 <Avatar name={v.vendedor ?? '?'} size={40} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-foreground">{v.vendedor}</p>
-                  <p className="text-xs text-gray-500">{v.telefone ?? '—'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{v.telefone ?? '—'}</p>
                 </div>
                 <span className="rounded-full bg-green-600 px-3 py-1 text-xs font-medium text-white">
                   Na vez
                 </span>
-                <span className="text-xs text-gray-500">{v.quantos_lead ?? 0} leads</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{v.quantos_lead ?? 0} leads</span>
               </div>
             ))}
           </div>
@@ -609,27 +609,27 @@ function FilaAtendimentoTab() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
           Em espera
         </h2>
         {emEspera.length === 0 ? (
-          <p className="text-sm text-gray-400">Nenhum vendedor em espera.</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum vendedor em espera.</p>
         ) : (
           <ol className="space-y-2">
             {emEspera.map((v, index) => (
               <li
                 key={v.id}
-                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-card p-3"
+                className="flex items-center gap-3 rounded-xl border border-gray-200 bg-card p-3 dark:border-gray-800"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-100 text-xs font-semibold text-gray-600 dark:bg-gray-800 dark:text-gray-300">
                   {index + 1}
                 </span>
                 <Avatar name={v.vendedor ?? '?'} size={32} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">{v.vendedor}</p>
-                  <p className="text-xs text-gray-500">{v.telefone ?? '—'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{v.telefone ?? '—'}</p>
                 </div>
-                <span className="text-xs text-gray-500">{v.quantos_lead ?? 0} leads</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">{v.quantos_lead ?? 0} leads</span>
               </li>
             ))}
           </ol>
@@ -638,21 +638,21 @@ function FilaAtendimentoTab() {
 
       {outros.length > 0 && (
         <section>
-          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
             Sem status de fila definido
           </h2>
           <ul className="space-y-2">
             {outros.map((v) => (
               <li
                 key={v.id}
-                className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3"
+                className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-800/60"
               >
                 <Avatar name={v.vendedor ?? '?'} size={32} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-foreground">{v.vendedor}</p>
-                  <p className="text-xs text-gray-500">{v.telefone ?? '—'}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{v.telefone ?? '—'}</p>
                 </div>
-                <span className="text-xs text-gray-400">atender: {v.atender ?? '—'}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500">atender: {v.atender ?? '—'}</span>
               </li>
             ))}
           </ul>
@@ -660,7 +660,7 @@ function FilaAtendimentoTab() {
       )}
 
       {vendedores.length === 0 && (
-        <p className="text-sm text-gray-400">Nenhum vendedor cadastrado ainda.</p>
+        <p className="text-sm text-gray-400 dark:text-gray-500">Nenhum vendedor cadastrado ainda.</p>
       )}
     </div>
   );
@@ -782,10 +782,10 @@ function CredenciaisTab() {
     <div className="max-w-md space-y-6">
       <div className="rounded-xl bg-card p-5 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-foreground">Supabase</h2>
-        <p className="text-xs text-gray-500">URL</p>
-        <p className="mb-2 text-sm text-gray-800">{mask(supabaseUrl)}</p>
-        <p className="text-xs text-gray-500">Anon Key</p>
-        <p className="text-sm text-gray-800">{mask(supabaseAnonKey)}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">URL</p>
+        <p className="mb-2 text-sm text-gray-800 dark:text-gray-200">{mask(supabaseUrl)}</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Anon Key</p>
+        <p className="text-sm text-gray-800 dark:text-gray-200">{mask(supabaseAnonKey)}</p>
       </div>
 
       <div className="rounded-xl bg-card p-5 shadow-sm">
@@ -793,7 +793,7 @@ function CredenciaisTab() {
         <input
           value={uazapiToken}
           onChange={(e) => setUazapiToken(e.target.value)}
-          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="mb-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
           placeholder="Token da instância uazapi"
         />
         <button
@@ -804,20 +804,20 @@ function CredenciaisTab() {
         >
           {salvando ? 'Salvando...' : 'Salvar token'}
         </button>
-        {mensagem && <p className="mt-2 text-xs text-gray-500">{mensagem}</p>}
+        {mensagem && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{mensagem}</p>}
       </div>
 
       <div className="rounded-xl bg-card p-5 shadow-sm">
         <h2 className="mb-3 text-sm font-semibold text-foreground">WhatsApp</h2>
-        <p className="mb-3 text-xs text-gray-500">
+        <p className="mb-3 text-xs text-gray-500 dark:text-gray-400">
           Status:{' '}
           <span
             className={
               instanceStatus === 'connected'
-                ? 'font-medium text-green-600'
+                ? 'font-medium text-green-600 dark:text-green-400'
                 : instanceStatus === 'connecting'
-                  ? 'font-medium text-amber-600'
-                  : 'font-medium text-gray-600'
+                  ? 'font-medium text-amber-600 dark:text-amber-400'
+                  : 'font-medium text-gray-600 dark:text-gray-400'
             }
           >
             {instanceStatus === 'connected'
@@ -843,13 +843,13 @@ function CredenciaisTab() {
               type="button"
               onClick={desconectarWhatsapp}
               disabled={desconectando}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-60"
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-60 dark:border-red-900 dark:text-red-400"
             >
               {desconectando ? 'Desconectando...' : 'Desconectar'}
             </button>
           )}
         </div>
-        {statusConexao && <p className="mt-2 text-xs text-gray-500">{statusConexao}</p>}
+        {statusConexao && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{statusConexao}</p>}
       </div>
 
       {qrcode && (
@@ -857,14 +857,14 @@ function CredenciaisTab() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           onClick={() => setQrcode(null)}
         >
-          <div className="rounded-xl bg-white p-6 text-center" onClick={(e) => e.stopPropagation()}>
-            <p className="mb-3 text-sm text-gray-700">Escaneie o QR code com o WhatsApp</p>
+          <div className="rounded-xl bg-card p-6 text-center" onClick={(e) => e.stopPropagation()}>
+            <p className="mb-3 text-sm text-gray-700 dark:text-gray-300">Escaneie o QR code com o WhatsApp</p>
             {/* eslint-disable-next-line @next/next/no-img-element -- imagem base64 dinâmica do QR code, não compatível com otimização do next/image */}
             <img src={qrcode} alt="QR code de conexão do WhatsApp" className="mx-auto h-64 w-64" />
             <button
               type="button"
               onClick={() => setQrcode(null)}
-              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm"
+              className="mt-4 rounded-lg border border-gray-300 px-4 py-2 text-sm dark:border-gray-700"
             >
               Fechar
             </button>
@@ -1006,9 +1006,9 @@ function AparenciaTab() {
           accept="image/*"
           onChange={handleUploadLogo}
           disabled={enviandoLogo}
-          className="block w-full text-sm text-gray-600"
+          className="block w-full text-sm text-gray-600 dark:text-gray-300"
         />
-        {enviandoLogo && <p className="mt-2 text-xs text-gray-500">Enviando...</p>}
+        {enviandoLogo && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Enviando...</p>}
       </div>
 
       <div className="rounded-xl bg-card p-5 shadow-sm">
@@ -1016,39 +1016,39 @@ function AparenciaTab() {
 
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700">Cor primária (botões, destaque)</label>
+            <label className="text-sm text-gray-700 dark:text-gray-300">Cor primária (botões, destaque)</label>
             <input
               type="color"
               value={corPrimaria}
               onChange={(e) => setCorPrimaria(e.target.value)}
-              className="h-8 w-12 cursor-pointer rounded border border-gray-300"
+              className="h-8 w-12 cursor-pointer rounded border border-gray-300 dark:border-gray-700"
             />
           </div>
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700">Cor secundária (acentos)</label>
+            <label className="text-sm text-gray-700 dark:text-gray-300">Cor secundária (acentos)</label>
             <input
               type="color"
               value={corSecundaria}
               onChange={(e) => setCorSecundaria(e.target.value)}
-              className="h-8 w-12 cursor-pointer rounded border border-gray-300"
+              className="h-8 w-12 cursor-pointer rounded border border-gray-300 dark:border-gray-700"
             />
           </div>
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700">Cor do texto</label>
+            <label className="text-sm text-gray-700 dark:text-gray-300">Cor do texto</label>
             <input
               type="color"
               value={corTexto}
               onChange={(e) => setCorTexto(e.target.value)}
-              className="h-8 w-12 cursor-pointer rounded border border-gray-300"
+              className="h-8 w-12 cursor-pointer rounded border border-gray-300 dark:border-gray-700"
             />
           </div>
           <div className="flex items-center justify-between">
-            <label className="text-sm text-gray-700">Cor de fundo</label>
+            <label className="text-sm text-gray-700 dark:text-gray-300">Cor de fundo</label>
             <input
               type="color"
               value={corFundo}
               onChange={(e) => setCorFundo(e.target.value)}
-              className="h-8 w-12 cursor-pointer rounded border border-gray-300"
+              className="h-8 w-12 cursor-pointer rounded border border-gray-300 dark:border-gray-700"
             />
           </div>
         </div>
@@ -1064,7 +1064,7 @@ function AparenciaTab() {
       </div>
 
       {mensagem && (
-        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600' : 'text-green-600'}`}>
+        <p className={`text-sm ${mensagem.tipo === 'erro' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
           {mensagem.texto}
         </p>
       )}

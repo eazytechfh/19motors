@@ -307,13 +307,13 @@ export function LeadDrawer({
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       <div className="flex-1 bg-black/30" onClick={onClose} />
-      <div className="flex h-full w-full max-w-md flex-col overflow-y-auto bg-white shadow-xl">
-        <div className="flex items-start justify-between border-b border-gray-100 p-5">
+      <div className="flex h-full w-full max-w-md flex-col overflow-y-auto bg-card shadow-xl">
+        <div className="flex items-start justify-between border-b border-gray-100 p-5 dark:border-gray-800">
           <div className="flex items-center gap-3">
             <Avatar name={lead.nome_lead} size={44} />
             <div>
               <p className="text-base font-semibold text-foreground">{lead.nome_lead}</p>
-              <p className="text-sm text-gray-500">{lead.telefone}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">{lead.telefone}</p>
               {whatsappUrl && (
                 <a
                   href={whatsappUrl}
@@ -334,7 +334,7 @@ export function LeadDrawer({
                 </span>
                 <span
                   className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
-                    dentroExpediente ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
+                    dentroExpediente ? 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
                   }`}
                 >
                   <span
@@ -346,12 +346,12 @@ export function LeadDrawer({
               <div className="mt-2" aria-live="polite">
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-                    botAtivo ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'
+                    botAtivo ? 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400' : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'
                   }`}
                 >
                   {botAtivo ? 'IA ativa' : 'IA inativa'}
                 </span>
-                <p className="mt-1 text-xs text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Última alteração: {ultimaAlteracaoBot}
                 </p>
                 <button
@@ -365,14 +365,14 @@ export function LeadDrawer({
                 >
                   {alterandoBot ? 'Alterando IA...' : botAtivo ? 'Desativar IA' : 'Ativar IA'}
                 </button>
-                {mensagemBot && <p className="mt-1 text-xs text-gray-500">{mensagemBot}</p>}
+                {mensagemBot && <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{mensagemBot}</p>}
               </div>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-300"
             aria-label="Fechar"
           >
             ✕
@@ -381,45 +381,45 @@ export function LeadDrawer({
 
         <div className="flex-1 space-y-6 p-5">
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Dados Pessoais
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="mb-1 block text-xs text-gray-500">Nome</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Nome</label>
                 <input
                   value={campos.nome_lead}
                   onChange={(e) => setCampos((c) => ({ ...c, nome_lead: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">CPF</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">CPF</label>
                 <input
                   value={campos.cpf}
                   onChange={(e) => setCampos((c) => ({ ...c, cpf: e.target.value }))}
                   placeholder="000.000.000-00"
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Data de nascimento</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Data de nascimento</label>
                 <input
                   type="date"
                   value={campos.data_nascimento}
                   onChange={(e) => setCampos((c) => ({ ...c, data_nascimento: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 />
               </div>
               <div>
-                <p className="text-xs text-gray-500">Idade</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Idade</p>
                 <p className="text-sm font-medium text-foreground">{idade !== null ? `${idade} anos` : '—'}</p>
               </div>
             </div>
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Score Serasa
             </h3>
             <div className="flex items-center justify-between">
@@ -431,7 +431,7 @@ export function LeadDrawer({
                 {serasa.label}
               </span>
             </div>
-            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
+            <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100 dark:bg-gray-800">
               <div
                 className="h-full rounded-full"
                 style={{
@@ -440,41 +440,41 @@ export function LeadDrawer({
                 }}
               />
             </div>
-            <div className="mt-1 flex justify-between text-xs text-gray-400">
+            <div className="mt-1 flex justify-between text-xs text-gray-400 dark:text-gray-400">
               <span>0</span>
               <span>1000</span>
             </div>
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Negociação
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Veículo de interesse</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Veículo de interesse</label>
                 <input
                   value={campos.veiculo_interesse}
                   onChange={(e) => setCampos((c) => ({ ...c, veiculo_interesse: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Valor</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Valor</label>
                 <input
                   type="number"
                   step="0.01"
                   value={campos.valor}
                   onChange={(e) => setCampos((c) => ({ ...c, valor: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Vendedor</label>
+                <label className="mb-1 block text-xs text-gray-500 dark:text-gray-400">Vendedor</label>
                 <select
                   value={campos.vendedor}
                   onChange={(e) => setCampos((c) => ({ ...c, vendedor: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+                  className="w-full rounded-lg border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
                 >
                   <option value="">Sem vendedor</option>
                   {vendedores.map((v) => (
@@ -485,7 +485,7 @@ export function LeadDrawer({
                 </select>
               </div>
               <div>
-                <p className="text-xs text-gray-500">Origem</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Origem</p>
                 <p className="text-sm font-medium text-foreground">{lead.origem ?? '—'}</p>
               </div>
             </div>
@@ -498,11 +498,11 @@ export function LeadDrawer({
             >
               {salvandoCampos ? 'Salvando...' : 'Salvar alterações'}
             </button>
-            {mensagemCampos && <p className="mt-2 text-xs text-gray-500">{mensagemCampos}</p>}
+            {mensagemCampos && <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">{mensagemCampos}</p>}
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Etiquetas
             </h3>
             <div className="flex flex-wrap gap-2">
@@ -517,7 +517,7 @@ export function LeadDrawer({
                     style={
                       ativa
                         ? { backgroundColor: `${etiqueta.cor}1a`, borderColor: etiqueta.cor, color: etiqueta.cor }
-                        : { backgroundColor: 'white', borderColor: '#e5e7eb', color: '#6b7280' }
+                        : { backgroundColor: 'transparent', borderColor: '#e5e7eb', color: '#6b7280' }
                     }
                   >
                     {etiqueta.nome}
@@ -525,35 +525,35 @@ export function LeadDrawer({
                 );
               })}
               {etiquetas.length === 0 && (
-                <p className="text-xs text-gray-400">Nenhuma etiqueta cadastrada.</p>
+                <p className="text-xs text-gray-400 dark:text-gray-400">Nenhuma etiqueta cadastrada.</p>
               )}
             </div>
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Resumo de qualificação [IA]
             </h3>
-            <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-700">
+            <div className="rounded-lg bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-700 dark:bg-gray-800 dark:text-gray-300">
               {lead.resumo_qualificacao?.trim() || (
-                <span className="text-gray-400">Nenhum resumo de qualificação disponível ainda.</span>
+                <span className="text-gray-400 dark:text-gray-400">Nenhum resumo de qualificação disponível ainda.</span>
               )}
             </div>
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Observações
             </h3>
             <textarea
               value={observacao}
               onChange={(e) => setObservacao(e.target.value)}
               rows={4}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
               placeholder="Anote observações sobre este lead..."
             />
             {ultimoLogObservacao && (
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                 {ultimoLogObservacao.acao === 'observacao_adicionada' ? 'Adicionada' : 'Alterada'} por{' '}
                 <span className="font-medium">{ultimoLogObservacao.responsavel_nome}</span> em{' '}
                 {new Date(ultimoLogObservacao.created_at).toLocaleString('pt-BR')}
@@ -572,7 +572,7 @@ export function LeadDrawer({
                 <p
                   role="status"
                   className={`text-right text-xs ${
-                    mensagemObservacao.tipo === 'sucesso' ? 'text-green-600' : 'text-red-600'
+                    mensagemObservacao.tipo === 'sucesso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                   }`}
                 >
                   {mensagemObservacao.texto}
@@ -582,25 +582,25 @@ export function LeadDrawer({
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Histórico de Movimentações
             </h3>
             {historico.length === 0 ? (
-              <p className="text-xs text-gray-400">Nenhuma movimentação registrada ainda.</p>
+              <p className="text-xs text-gray-400 dark:text-gray-400">Nenhuma movimentação registrada ainda.</p>
             ) : (
               <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
                 {historico.map((item) => (
-                  <li key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <li key={item.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-medium text-gray-800">
+                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
                         {item.estagio_anterior ? `${estagioLabelOf(item.estagio_anterior)} → ` : ''}
                         {estagioLabelOf(item.estagio_novo)}
                       </p>
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-gray-400 dark:text-gray-400">
                         {new Date(item.created_at).toLocaleString('pt-BR')}
                       </p>
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-500">{item.usuario ?? 'Usuário desconhecido'}</p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{item.usuario ?? 'Usuário desconhecido'}</p>
                   </li>
                 ))}
               </ul>
@@ -608,27 +608,27 @@ export function LeadDrawer({
           </section>
 
           <section>
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-400">
               Logs Gerais
             </h3>
             {logs.length === 0 ? (
-              <p className="text-xs text-gray-400">Nenhuma ação registrada ainda.</p>
+              <p className="text-xs text-gray-400 dark:text-gray-400">Nenhuma ação registrada ainda.</p>
             ) : (
               <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
                 {logs.map((log) => (
-                  <li key={log.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2">
+                  <li key={log.id} className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-800">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="text-xs font-medium text-gray-800">
+                      <p className="text-xs font-medium text-gray-800 dark:text-gray-200">
                         {log.acao.replaceAll('_', ' ')}
                       </p>
-                      <time className="shrink-0 text-xs text-gray-400">
+                      <time className="shrink-0 text-xs text-gray-400 dark:text-gray-400">
                         {new Date(log.created_at).toLocaleString('pt-BR')}
                       </time>
                     </div>
-                    <p className="mt-0.5 text-xs text-gray-500">{log.responsavel_nome}</p>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{log.responsavel_nome}</p>
                     {Array.isArray(log.detalhes.campos_alterados) &&
                       log.detalhes.campos_alterados.length > 0 && (
-                        <p className="mt-1 text-xs text-gray-400">
+                        <p className="mt-1 text-xs text-gray-400 dark:text-gray-400">
                           Campos: {log.detalhes.campos_alterados.join(', ')}
                         </p>
                       )}
@@ -638,9 +638,9 @@ export function LeadDrawer({
             )}
           </section>
 
-          <section className="border-t border-gray-200 pt-5">
-            <h3 className="text-sm font-semibold text-red-700">Excluir lead</h3>
-            <p className="mt-1 text-xs text-gray-500">
+          <section className="border-t border-gray-200 pt-5 dark:border-gray-800">
+            <h3 className="text-sm font-semibold text-red-700 dark:text-red-400">Excluir lead</h3>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Esta ação é permanente e não poderá ser desfeita.
             </p>
             <button
@@ -649,7 +649,7 @@ export function LeadDrawer({
                 setErroExclusao(null);
                 setConfirmandoExclusao(true);
               }}
-              className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50"
+              className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950/40"
             >
               Excluir lead
             </button>
@@ -663,17 +663,17 @@ export function LeadDrawer({
             role="dialog"
             aria-modal="true"
             aria-labelledby="confirmar-exclusao-titulo"
-            className="w-full max-w-sm rounded-xl bg-white p-5 shadow-2xl"
+            className="w-full max-w-sm rounded-xl bg-card p-5 shadow-2xl"
           >
-            <h2 id="confirmar-exclusao-titulo" className="text-base font-semibold text-gray-900">
+            <h2 id="confirmar-exclusao-titulo" className="text-base font-semibold text-gray-900 dark:text-gray-100">
               Confirmar exclusão
             </h2>
-            <p className="mt-2 text-sm text-gray-600">
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               Tem certeza de que deseja excluir o lead {lead.nome_lead}? Esta ação não poderá ser
               desfeita.
             </p>
             {erroExclusao && (
-              <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
+              <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-400">
                 {erroExclusao}
               </p>
             )}
@@ -682,7 +682,7 @@ export function LeadDrawer({
                 type="button"
                 onClick={() => setConfirmandoExclusao(false)}
                 disabled={excluindo}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
               >
                 Não
               </button>

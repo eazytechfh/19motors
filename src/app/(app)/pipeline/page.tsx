@@ -43,7 +43,7 @@ function normalizeEstagio(estagio: string): ColunaId {
 function TimerNegociacaoCard({ expiraEm, agora, statusAtendimento }: { expiraEm: string; agora: number; statusAtendimento: StatusAtendimento }) {
   if (statusAtendimento === 'finalizado') {
     return (
-      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
+      <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500 dark:bg-gray-800 dark:text-gray-400">
         Finalizado
       </span>
     );
@@ -52,7 +52,7 @@ function TimerNegociacaoCard({ expiraEm, agora, statusAtendimento }: { expiraEm:
   const restante = new Date(expiraEm).getTime() - agora;
   const vencido = restante <= 0;
   const iniciado = statusAtendimento === 'iniciado';
-  const cor = iniciado ? 'bg-green-50 text-green-700' : vencido ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700';
+  const cor = iniciado ? 'bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-400' : vencido ? 'bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-400' : 'bg-orange-50 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400';
 
   return (
     <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${cor}`}>
@@ -89,19 +89,19 @@ function LeadCard({ lead, onOpen, agora, statusAtendimento, etiquetas }: CardPro
       {...attributes}
       {...listeners}
       onClick={() => onOpen(lead)}
-      className="cursor-grab rounded-lg border border-gray-200 bg-white p-3 shadow-sm active:cursor-grabbing"
+      className="cursor-grab rounded-lg border border-gray-200 bg-card p-3 shadow-sm active:cursor-grabbing dark:border-gray-800"
     >
       <div className="mb-2 flex items-center gap-2">
         <Avatar name={lead.nome_lead} size={28} />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground">{lead.nome_lead}</p>
-          <p className="truncate text-xs text-gray-500">{lead.telefone}</p>
+          <p className="truncate text-xs text-gray-500 dark:text-gray-400">{lead.telefone}</p>
         </div>
       </div>
       {lead.veiculo_interesse && (
-        <p className="truncate text-xs text-gray-600">Interesse: {lead.veiculo_interesse}</p>
+        <p className="truncate text-xs text-gray-600 dark:text-gray-300">Interesse: {lead.veiculo_interesse}</p>
       )}
-      {lead.vendedor && <p className="truncate text-xs text-gray-400">Vendedor: {lead.vendedor}</p>}
+      {lead.vendedor && <p className="truncate text-xs text-gray-400 dark:text-gray-500">Vendedor: {lead.vendedor}</p>}
       {etiquetas.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1">
           {etiquetas.map((etiqueta) => (
@@ -173,16 +173,16 @@ function Column({
   return (
     <div
       ref={setNodeRef}
-      className={`flex h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden rounded-xl bg-gray-50 p-3 ${
-        isOver ? 'ring-2 ring-gray-400' : ''
+      className={`flex h-full min-h-0 w-72 shrink-0 flex-col overflow-hidden rounded-xl bg-gray-50 p-3 dark:bg-gray-900 ${
+        isOver ? 'ring-2 ring-gray-400 dark:ring-gray-600' : ''
       }`}
     >
       <div className="mb-3 flex items-center justify-between px-1">
         <div className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-sm font-semibold text-gray-800">{label}</span>
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">{label}</span>
         </div>
-        <span className="text-xs text-gray-500">{leads.length}</span>
+        <span className="text-xs text-gray-500 dark:text-gray-400">{leads.length}</span>
       </div>
 
       <SortableContext items={leadsDaPagina.map((l) => l.id)} strategy={verticalListSortingStrategy}>
@@ -206,18 +206,18 @@ function Column({
             type="button"
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             disabled={paginaAtual === 1}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Anterior
           </button>
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
             {paginaAtual} / {totalPaginas}
           </span>
           <button
             type="button"
             onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
             disabled={paginaAtual === totalPaginas}
-            className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-40 dark:text-gray-300 dark:hover:bg-gray-700"
           >
             Próxima
           </button>
@@ -577,17 +577,17 @@ export default function PipelinePage() {
     <div className="flex h-full min-h-0 flex-col gap-4">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Pipeline</h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           {leadsFiltrados.length} lead(s) exibido(s). Arraste os cards entre as etapas do funil
         </p>
       </div>
 
       {errorMessage && (
-        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{errorMessage}</div>
+        <div className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-400">{errorMessage}</div>
       )}
 
       {erroEtapas && (
-        <div className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700">
+        <div className="rounded-lg bg-amber-50 px-4 py-2 text-sm text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
           Não foi possível carregar as etapas configuradas. O padrão local está em uso.
         </div>
       )}

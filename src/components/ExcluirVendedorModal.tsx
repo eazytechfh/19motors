@@ -24,12 +24,12 @@ export function ExcluirVendedorModal({ vendedorNome, destinos, loading, onCancel
         role="dialog"
         aria-modal="true"
         aria-labelledby="excluir-vendedor-titulo"
-        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+        className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl dark:bg-gray-900 dark:border dark:border-gray-700"
       >
         <h2 id="excluir-vendedor-titulo" className="text-lg font-semibold text-foreground">
           Excluir vendedor?
         </h2>
-        <p className="mt-2 text-sm text-gray-600">
+        <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
           O vendedor <strong>{vendedorNome}</strong> será excluído permanentemente. Escolha o que fazer
           com todos os leads atribuídos a {vendedorNome}.
         </p>
@@ -42,7 +42,7 @@ export function ExcluirVendedorModal({ vendedorNome, destinos, loading, onCancel
           value={destino}
           onChange={(event) => setDestino(event.target.value)}
           disabled={loading}
-          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+          className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-gray-700 dark:bg-white/5 dark:text-gray-100"
         >
           <option value="">Sem vendedor</option>
           {destinos.length > 0 && (
@@ -60,7 +60,7 @@ export function ExcluirVendedorModal({ vendedorNome, destinos, loading, onCancel
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm disabled:opacity-60"
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm disabled:opacity-60 dark:border-gray-700 dark:text-gray-100 dark:hover:bg-white/5"
           >
             Cancelar
           </button>
